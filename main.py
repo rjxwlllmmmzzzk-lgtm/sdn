@@ -8,8 +8,9 @@ from telethon.errors import SessionPasswordNeededError
 from telebot.async_telebot import AsyncTeleBot
 from flask import Flask
 
-API_ID = 30324289
-API_HASH = "93e20ced9ed0fa7e7e903900c11633d6"
+# =============== إعدادات API الجديدة ===============
+API_ID = 30874435
+API_HASH = "cc3b98786456de26fe5e803910051cea"
 BOT_TOKEN = "8817608659:AAF8O-I58x-khZLq4AzY-OWTyfgPIcNEo1M"
 
 user_sessions = {}
@@ -17,18 +18,19 @@ active_spams = {}
 user_steps = {}
 
 TAKLEESH_WORDS = [
-    "لحلكك الهالبك طيزمك", "اشيلك بعيري", "عبالك اعوفك؟", "انيجمك علصدرك"
+    "لحلكك الهالبك طيزمك", "اشيلك بعيري", "عبالك اعوفك؟", "انيجمك علصدرك",
+    "مصمص عيورتي", "اهف اختك بطرف عيري"
 ]
 
 TASTEER_WORDS = [
-    "القحاب", "يا خنيث", "يا ديوث"
+    "القحاب", "يا خنيث", "يا ديوث", "الخنيث", "يا ابن الديوث"
 ]
 
 bot = AsyncTeleBot(BOT_TOKEN)
 
 async def send_code_telethon(user_id, phone):
     try:
-        client = TelegramClient(":memory:", API_ID, API_HASH)
+        client = TelegramClient(f":memory:", API_ID, API_HASH)
         await client.connect()
         if not await client.is_user_authorized():
             await client.send_code_request(phone)
@@ -158,7 +160,7 @@ async def handle_phone(message):
     result = await send_code_telethon(user_id, phone)
     if result is True:
         user_steps[user_id] = {"step": "waiting_code"}
-        await bot.reply_to(message, "✅ تم إرسال الكود\nأدخل الكود:")
+        await bot.reply_to(message, "✅ تم إرسال الكود\nأدخل الكود بمسافات:\nمثال: 1 2 3 4 5")
     else:
         await bot.reply_to(message, f"❌ فشل: {result}")
         del user_steps[user_id]
@@ -167,6 +169,9 @@ async def handle_phone(message):
 async def handle_code(message):
     user_id = message.from_user.id
     code = message.text.strip().replace(" ", "")
+    if not code.isdigit():
+        await bot.reply_to(message, "❌ الكود أرقام فقط\nمثال: 1 2 3 4 5")
+        return
     result = await verify_code_telethon(user_id, code)
     if result is True:
         del user_steps[user_id]
@@ -175,7 +180,7 @@ async def handle_code(message):
         user_steps[user_id] = {"step": "waiting_password"}
         await bot.reply_to(message, "🔐 أرسل كلمة المرور:")
     else:
-        await bot.reply_to(message, "❌ كود خطأ")
+        await bot.reply_to(message, f"❌ كود خطأ: {result}")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
@@ -185,9 +190,9 @@ async def handle_password(message):
     result = await verify_password_telethon(user_id, password)
     if result is True:
         del user_steps[user_id]
-        await bot.reply_to(message, "✅ تم الدخول")
+        await bot.reply_to(message, "✅ تم الدخول\n/takleesh\n/tasteer")
     else:
-        await bot.reply_to(message, "❌ كلمة مرور خطأ")
+        await bot.reply_to(message, f"❌ كلمة مرور خطأ: {result}")
         del user_steps[user_id]
 
 @bot.message_handler(commands=['takleesh'])
