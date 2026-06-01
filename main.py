@@ -3,31 +3,98 @@ import re
 import random
 import os
 import threading
+import json
+from datetime import datetime, timedelta
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 from telebot.async_telebot import AsyncTeleBot
 from flask import Flask
 
-# =============== إعدادات API الجديدة ===============
 API_ID = 30874435
 API_HASH = "cc3b98786456de26fe5e803910051cea"
 BOT_TOKEN = "8817608659:AAF8O-I58x-khZLq4AzY-OWTyfgPIcNEo1M"
+
+OWNER_ID = 8603631953  # ايدي الاونر
 
 user_sessions = {}
 active_spams = {}
 user_steps = {}
 
+# =============== ملف الاشتراكات ===============
+SUBSCRIPTIONS_FILE = "subscriptions.json"
+
+def load_subscriptions():
+    if os.path.exists(SUBSCRIPTIONS_FILE):
+        with open(SUBSCRIPTIONS_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_subscriptions(data):
+    with open(SUBSCRIPTIONS_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+subscriptions = load_subscriptions()
+
+def is_subscribed(user_id):
+    user_id = str(user_id)
+    if user_id in subscriptions:
+        expiry = subscriptions[user_id]
+        if datetime.now() < datetime.fromisoformat(expiry):
+            return True
+        else:
+            del subscriptions[user_id]
+            save_subscriptions(subscriptions)
+    return False
+
+def add_subscription(user_id, duration_hours):
+    user_id = str(user_id)
+    expiry = datetime.now() + timedelta(hours=duration_hours)
+    subscriptions[user_id] = expiry.isoformat()
+    save_subscriptions(subscriptions)
+
+# =============== كلمات التكليش (لا نهائية) ===============
 TAKLEESH_WORDS = [
-    "لحلكك الهالبك طيزمك", "اشيلك بعيري", "عبالك اعوفك؟", "انيجمك علصدرك",
-    "مصمص عيورتي", "اهف اختك بطرف عيري"
+    "لحلكك الهالبك طيزمك", "اشيلك بعيري", "عبالك اعوفك؟", "انيجمك علصدرك", "ابن الزانيه",
+    "مصمص عيورتي", "اهف اختك بطرف عيري", "اربطك بقياطين قندرتي", "اشيل ربك واركعه بلكاع",
+    "ابن الكحبه الستشرافيه", "اطحن ضلوعك", "اكهرب طيزك", "احط قضيبي بكس امك", "اسوي كسيسمك طشار",
+    "اقتحم نسلك", "ادحس عيري بكسمك", "اخدر امك", "انيج امك الكحبه", "ربك اسمطه", "اعبد زبي",
+    "المخنث", "اصعق صريمك", "احط الدروب بطيزك", "اطشر صريمك", "انيج اختك البربوك", "افلشك تفليش",
+    "اذب تيزاب بكسمك", "افرش كسمك", "انيج رب ربك", "افترس طيزك", "اخدر طيزختك", "اضربمك",
+    "انيجمك فرنسي", "اخرمش طيزك", "العب بوبجي بكسمك", "الفيمبوي", "اتنايج وي اهلك", "ادك كسمك",
+    "ابن الكحبه اليوم", "اشوي على كسمك العير", "ادحسه بكسختك", "ايوي صريم امك", "طشار انيج عرضك",
+    "عيري براسك", "ولك شبيك خفت", "اخضع لجباتي الحاره", "اعجن عيورتي بكسمك", "اخضع العيري",
+    "استرجل", "اشكه لكسمك وعلي", "ادحس الكعبه بطيزك", "ابن الكحبه الرومانيه", "ابن القندره",
+    "ازورك وجهك بعيري", "فرخي", "اصابعي تفترسك", "اختك كحبتي", "اله اشكه لحلكك", "انزل لعنه عيري بكسمك",
+    "شو دتعال", "ابن المتبربكه", "ابن عاشقه العير", "دشوف شراح اسوي", "اتفل بصرمك", "احط عيورتي بطيزمك",
+    "وعلي ماتكدرلي", "ادحس رجلي بكس اختك", "ولك تعال مصعيري", "انكز على صريمك", "اشنقك بلباس امك",
+    "احط امك بطيزك", "ابن الهايته", "ابن الانحطاطيه", "امك احطها بعيري", "ابن الربل", "ابن مصاصه عيورتي",
+    "ابن الناسوخيه", "اتناطح وي عنابه امك", "اله البك طيزمك", "اصعد على ضهرك", "نياج اختك اني",
+    "ادحس البنكه بصرمك", "ابعبص صريمك", "افلش كسمك تفليش", "احط الويسكي بكس اختك", "اتسودن عليك",
+    "ابن كحباتي", "اشلع شفايف امك", "اجنكل طيز اختك", "ابن بلاعت العير", "اجك امك بعيري", "امصمص ديوس اختك",
+    "ابن المراهقه", "ابن التحب عيورتي", "اهف راس امك بل طاوه", "اشكشك ديوسك", "اربطك بقياطين قندرتي",
+    "ابن الاسحاقيه", "ابن الانزلاقيه", "احط العرك بكس امك", "اكهرب طيزك", "فحلمك اني", "حدث",
+    "ابن الدبل", "ابن الفريخه", "ابن جبتي الحاره", "اطشر مخك بعيري", "ابن الكحيبه", "افلش كسمك بوكسات",
+    "اعوج ركبت امك", "ابن الزنا", "اهينك بعيري", "اسوي كسيسمك طشار", "اجب بلباس اختك", "اذب تيزاب بكسمك",
+    "اصمل ولك", "اسد كس امك", "ابن سير النعال", "ابن الحوله", "ابن زبوبتي", "اخلي تمص جبتي", "كليشتي بكسمك",
+    "اخلي عيري براسك", "دمبك العير", "اسوي طويزك وصلتين", "امصمص نهود امك", "اخلي تمص جبتي", "اعبد زبي",
+    "وين تكدر لعيري", "امد تيل بصرمك", "اطب بين زرورك", "ابن ام العيوره", "انزل غضب الله بطيزك",
+    "اشلع راس اختك", "اتفل بصرمك", "اقتحم نسلك", "ارعن", "انكز على صريمك", "اخدر امك"
 ]
 
+# =============== كلمات التسطير (سعودية) ===============
 TASTEER_WORDS = [
-    "القحاب", "يا خنيث", "يا ديوث", "الخنيث", "يا ابن الديوث"
+    "ابن العاهره", "يا ابن القحبه", "يا ابن الدعاره", "كس ام اهلك", "كسم امك", "يا ديوث", "يا جرار",
+    "يا فحل اختك", "يا فحل امك", "انيك امك", "كسس اهلك", "مسوي تسوي قوي صح", "يا خنيث", "وش بك انيك أمك",
+    "يا ابن الساقطه", "يا فحل خواتك", "شو بك كس امك", "مسوي تسوي غبي صح", "يا ديوث يا جرار",
+    "يا ابن المتناكه", "يا شرمطه", "يا عاهر", "يا خول", "يا قواد", "يا منيوك", "يا ابن الحزانه",
+    "يا وسخ", "يا جربان", "يا نجس", "يا رجس", "يا منفوح", "يا معفن", "يا خبيث", "يا رذيل",
+    "يا حقير", "يا دنيء", "يا فاسق", "يا فاجر", "يا ملوث", "يا زب الكلب", "يا ابن الكلب",
+    "يا ابن الحمار", "يا ابن البقره", "يا تيس", "يا حمار", "يا كلب", "يا خنزير", "يا قرد"
 ]
 
 bot = AsyncTeleBot(BOT_TOKEN)
 
+# =============== دوال Telethon ===============
 async def send_code_telethon(user_id, phone):
     try:
         client = TelegramClient(f":memory:", API_ID, API_HASH)
@@ -85,6 +152,9 @@ def get_client(user_id):
     return user_sessions.get(user_id, {}).get("client")
 
 async def send_takleesh_messages(user_id, target, count, chat_id):
+    if not is_subscribed(user_id):
+        await bot.send_message(chat_id, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe للاشتراك")
+        return
     if user_id in active_spams:
         active_spams[user_id]["stop"] = False
     else:
@@ -109,6 +179,9 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
         del active_spams[user_id]
 
 async def send_tasteer_messages(user_id, target, delay, chat_id):
+    if not is_subscribed(user_id):
+        await bot.send_message(chat_id, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe للاشتراك")
+        return
     if user_id in active_spams:
         active_spams[user_id]["stop"] = False
     else:
@@ -132,22 +205,96 @@ async def send_tasteer_messages(user_id, target, delay, chat_id):
     if user_id in active_spams:
         del active_spams[user_id]
 
+# =============== أوامر البوت ===============
 @bot.message_handler(commands=['start'])
 async def start(message):
     user_id = message.from_user.id
-    if is_verified(user_id):
-        await bot.reply_to(message, "✅ مسجل دخول\n/takleesh\n/tasteer\n/stop")
+    subscribed = is_subscribed(user_id)
+    status = "✅ مفعل" if subscribed else "❌ غير مفعل"
+    
+    welcome_text = f"""
+<b>🔥 بـوت فـشـار 🔥</b>
+
+━━━━━━━━━━━━━━━━━━━━
+<b>🤖 المبرمج:</b> <i>الداهية ايليا الملائكة</i>
+<b>👑 الاونر:</b> <i>@Dwojj</i>
+━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 حالة الاشتراك:</b> {status}
+
+<b>⚡ الأوامر المتاحة:</b>
+• /login - تسجيل الدخول بحسابك
+• /takleesh - بدء التكليش
+• /tasteer - بدء التسطير
+• /stop - إيقاف العملية
+• /subscribe - الاشتراك بالبوت
+• /myplan - معرفة باقي اشتراكك
+
+━━━━━━━━━━━━━━━━━━━━
+<i>البوّاب اللي يفتح لك أبواب العيور</i>
+"""
+    await bot.reply_to(message, welcome_text, parse_mode="HTML")
+
+@bot.message_handler(commands=['subscribe'])
+async def subscribe(message):
+    user_id = message.from_user.id
+    text = f"""
+<b>⭐ نظام الاشتراكات ⭐</b>
+
+━━━━━━━━━━━━━━━━━━━━
+<b>💎 عن طريق النجوم:</b>
+
+⭐ 15 نجمة = ساعة واحدة
+⭐ 50 نجمة = يوم واحد
+⭐ 150 نجمة = أسبوع واحد
+⭐ 250 نجمة = شهر كامل
+
+━━━━━━━━━━━━━━━━━━━━
+<i>أرسل النجوم مباشرة إلى البوت</i>
+"""
+    await bot.reply_to(message, text, parse_mode="HTML")
+
+@bot.message_handler(commands=['myplan'])
+async def myplan(message):
+    user_id = str(message.from_user.id)
+    if user_id in subscriptions:
+        expiry = subscriptions[user_id]
+        remaining = datetime.fromisoformat(expiry) - datetime.now()
+        hours = remaining.total_seconds() // 3600
+        await bot.reply_to(message, f"✅ اشتراكك فعال لمدة {int(hours)} ساعة متبقية")
     else:
-        await bot.reply_to(message, "🔐 استخدم /login")
+        await bot.reply_to(message, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe للاشتراك")
+
+# أمر خاص بالاونر فقط
+@bot.message_handler(commands=['subscription'])
+async def subscription_cmd(message):
+    user_id = message.from_user.id
+    if user_id != OWNER_ID:
+        await bot.reply_to(message, "❌ هذا الأمر خاص بالأونر فقط")
+        return
+    
+    args = message.text.split()
+    if len(args) != 3:
+        await bot.reply_to(message, "❌ الاستخدام:\n/subscription [ايدي المستخدم] [عدد الساعات]")
+        return
+    
+    target_id = int(args[1])
+    hours = int(args[2])
+    
+    add_subscription(target_id, hours)
+    await bot.reply_to(message, f"✅ تم تفعيل اشتراك للمستخدم {target_id} لمدة {hours} ساعة")
 
 @bot.message_handler(commands=['login'])
 async def login(message):
     user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe للاشتراك")
+        return
     if is_verified(user_id):
-        await bot.reply_to(message, "✅ مسجل بالفعل")
+        await bot.reply_to(message, "✅ أنت مسجل بالفعل")
         return
     user_steps[user_id] = {"step": "waiting_phone"}
-    await bot.reply_to(message, "📱 أرسل رقمك مع +\nمثال: +9647701234567")
+    await bot.reply_to(message, "📱 أرسل رقمك مع +\nمثال: +966512345678")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_phone")
 async def handle_phone(message):
@@ -180,7 +327,7 @@ async def handle_code(message):
         user_steps[user_id] = {"step": "waiting_password"}
         await bot.reply_to(message, "🔐 أرسل كلمة المرور:")
     else:
-        await bot.reply_to(message, f"❌ كود خطأ: {result}")
+        await bot.reply_to(message, f"❌ كود خطأ")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
@@ -192,12 +339,15 @@ async def handle_password(message):
         del user_steps[user_id]
         await bot.reply_to(message, "✅ تم الدخول\n/takleesh\n/tasteer")
     else:
-        await bot.reply_to(message, f"❌ كلمة مرور خطأ: {result}")
+        await bot.reply_to(message, f"❌ كلمة مرور خطأ")
         del user_steps[user_id]
 
 @bot.message_handler(commands=['takleesh'])
 async def takleesh(message):
     user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe للاشتراك")
+        return
     if not is_verified(user_id):
         await bot.reply_to(message, "❌ سجل دخول: /login")
         return
@@ -233,6 +383,9 @@ async def takleesh_count(message):
 @bot.message_handler(commands=['tasteer'])
 async def tasteer(message):
     user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe للاشتراك")
+        return
     if not is_verified(user_id):
         await bot.reply_to(message, "❌ سجل دخول: /login")
         return
@@ -273,6 +426,31 @@ async def stop(message):
         await bot.reply_to(message, "🛑 جاري الإيقاف")
     else:
         await bot.reply_to(message, "⚠️ ما فيه عملية")
+
+# معالجة الاشتراك بالنجوم
+@bot.pre_checkout_query_handler(func=lambda query: True)
+async def checkout(pre_checkout_query):
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
+@bot.message_handler(content_types=['successful_payment'])
+async def successful_payment(message):
+    user_id = message.from_user.id
+    total_amount = message.successful_payment.total_amount // 100  # بالنجوم
+    
+    if total_amount == 15:
+        add_subscription(user_id, 1)  # ساعة
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة ساعة واحدة")
+    elif total_amount == 50:
+        add_subscription(user_id, 24)  # يوم
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة يوم واحد")
+    elif total_amount == 150:
+        add_subscription(user_id, 168)  # أسبوع
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة أسبوع")
+    elif total_amount == 250:
+        add_subscription(user_id, 720)  # شهر
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة شهر")
+    else:
+        await bot.reply_to(message, "❌ مبلغ غير صحيح")
 
 flask_app = Flask(__name__)
 
