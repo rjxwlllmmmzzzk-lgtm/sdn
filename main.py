@@ -352,7 +352,7 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
         except Exception as e:
             await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
             break
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)  # تم التعديل: من 1 إلى 3 ثواني
     await bot.send_message(chat_id, f"✅ تم إرسال {count} كليشة")
     if user_id in active_spams:
         del active_spams[user_id]
@@ -369,6 +369,10 @@ async def send_tasteer_messages(user_id, target, lines, delay, chat_id):
     if not client:
         await bot.send_message(chat_id, "❌ خطأ في الجلسة")
         return
+    # تأكد أن التأخير لا يقل عن 3 ثواني
+    actual_delay = max(delay, 3.0)
+    if actual_delay != delay:
+        await bot.send_message(chat_id, f"⚠️ تم تعديل السرعة إلى {actual_delay} ثانية (الحد الأدنى 3 ثواني)")
     for i in range(lines):
         if active_spams[user_id]["stop"]:
             await bot.send_message(chat_id, "🛑 تم الإيقاف")
@@ -379,55 +383,39 @@ async def send_tasteer_messages(user_id, target, lines, delay, chat_id):
         except Exception as e:
             await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
             break
-        await asyncio.sleep(delay)
+        await asyncio.sleep(actual_delay)
     await bot.send_message(chat_id, f"✅ تم إرسال {lines} سطر تسطير")
     if user_id in active_spams:
         del active_spams[user_id]
 
 # ==================================================
-# =============== أوامر البوت (ترحيب جميل) ===============
+# =============== أوامر البوت (ترحيب جديد) ===============
 # ==================================================
 
 @bot.message_handler(commands=['start'])
 async def start(message):
     user_id = message.from_user.id
     status = get_subscription_time(user_id)
-    first_name = message.from_user.first_name or "صديقي"
     
-    welcome_text = f"""
-╔════════════════════════════════════╗
-║     🌟 TNT?¿ SHADOW BOT 🌟        ║
-╠════════════════════════════════════╣
-║                                    ║
-║   ✨ اهلاً بك يا {first_name} ✨     ║
-║                                    ║
-║   ████████░░░░░░░░░░              ║
-║   البوّاب اللي يفتح لك أبواب       ║
-║   العيور والفضائح بكل احترافية     ║
-║                                    ║
-╠════════════════════════════════════╣
-║  📊 حالة اشتراكك: {status:<10}   ║
-╠════════════════════════════════════╣
-║  ⚡ الأوامر المتاحة:               ║
-║                                    ║
-║  🔐 /login  - تسجيل الدخول         ║
-║  💣 /takleesh - تكليش (ملايين)     ║
-║  🔪 /tasteer - تسطير (ملايين)      ║
-║  🛑 /stop    - إيقاف العملية       ║
-║  ⭐ /subscribe - اشتراك بالنجوم    ║
-║  📋 /myplan  - متبقي الاشتراك      ║
-║  🎁 /gift    - للأونر فقط          ║
-║                                    ║
-╠════════════════════════════════════╣
-║  🤖 المبرمج: الداهية ايليا الملائكة ║
-║  👑 الاونر: @Dwojj                 ║
-╠════════════════════════════════════╣
-║  💪 مئات الملايين من الكليشات       ║
-║  💪 كلمات تسطير قوية جداً           ║
-║  💪 تحديثات مستمرة                  ║
-╚════════════════════════════════════╝
-"""
-    await bot.reply_to(message, welcome_text, parse_mode="HTML")
+    # إرسال الصورة أولاً
+    photo_url = "https://l.top4top.io/p_3804s3rqj0.jpg"
+    caption = f"""<b>✨ اهلاً بك في TNT SHADOW BOT ✨</b>
+
+<b>👤 المستخدم:</b> <code>{message.from_user.first_name}</code>
+<b>📊 الاشتراك:</b> {status}
+
+<b>⚡ الأوامر المتاحة:</b>
+🔐 <code>/login</code> - تسجيل الدخول
+💣 <code>/takleesh</code> - تكليش (ملايين الكلمات)
+🔪 <code>/tasteer</code> - تسطير (ملايين الكلمات)
+🛑 <code>/stop</code> - إيقاف العملية
+⭐ <code>/subscribe</code> - اشتراك بالنجوم
+📋 <code>/myplan</code> - متبقي الاشتراك
+
+<b>👑 المطور:</b> @Dwojj
+<b>🤖 البوت:</b> اقوى بوت تكليش بالعراق</b>"""
+    
+    await bot.send_photo(message.chat.id, photo_url, caption=caption, parse_mode="HTML")
 
 @bot.message_handler(commands=['subscribe'])
 async def subscribe(message):
@@ -454,7 +442,7 @@ async def handle_subscription(call):
         prices = [LabeledPrice(label=f"⭐ {plan['name']}", amount=plan['price'])]
         await bot.send_invoice(
             chat_id=call.message.chat.id,
-            title=f"اشتراك {plan['name']} - TNT?¿",
+            title=f"اشتراك {plan['name']} - TNT SHADOW",
             description=f"تفعيل اشتراك {plan['name']}\n⭐ {plan['stars']} نجمة\n⏰ {plan['name']}",
             invoice_payload=f"sub_{plan['name']}",
             provider_token="",
@@ -601,7 +589,7 @@ async def takleesh_count(message):
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة...")
+    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة...\n⏱️ 3 ثواني بين كل رسالة")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -639,17 +627,18 @@ async def tasteer_lines(message):
         del user_steps[user_id]
         return
     user_steps[user_id] = {"step": "tasteer_delay", "target": user_steps[user_id]["target"], "lines": lines}
-    await bot.reply_to(message, "⏱️ السرعة بين كل سطر (بالثواني):\nمثال: 2")
+    await bot.reply_to(message, "⏱️ السرعة بين كل سطر (بالثواني):\n⚠️ أقل قيمة مسموحة 3 ثواني\nمثال: 3")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_delay")
 async def tasteer_delay(message):
     user_id = message.from_user.id
     try:
         delay = float(message.text.strip())
-        if delay < 0.5:
-            raise ValueError
+        if delay < 3:
+            await bot.reply_to(message, "⚠️ السرعة قليلة جداً! تم ضبطها تلقائياً إلى 3 ثواني (الحد الأدنى)")
+            delay = 3
     except:
-        await bot.reply_to(message, "❌ سرعة غير صالحة (أقل قيمة 0.5 ثانية)")
+        await bot.reply_to(message, "❌ سرعة غير صالحة (أقل قيمة 3 ثواني)")
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
@@ -671,17 +660,16 @@ flask_app = Flask(__name__)
 
 @flask_app.route('/')
 def home():
-    return "TNT?¿ Shadow Bot is running!"
+    return "TNT SHADOW Bot is running!"
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
     flask_app.run(host='0.0.0.0', port=port)
 
 async def main():
-    print("🔥 TNT?¿ SHADOW BOT with Infinite Words is running...")
-    print("✅ مئات الملايين من الكليشات والكلمات القوية")
-    print("✅ التكليف: يرسل أي عدد تختاره")
-    print("✅ التسطير: كل سطر = كليشة كاملة")
+    print("🔥 TNT SHADOW BOT is running...")
+    print("✅ تم التعديل: 3 ثواني بين كل رسالة")
+    print("✅ تم تصغير وتجميل الترحيب مع الصورة")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
 
