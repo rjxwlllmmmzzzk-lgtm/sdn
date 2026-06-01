@@ -23,8 +23,14 @@ user_steps = {}
 
 DB_PATH = "subscriptions.db"
 
+def get_db_connection():
+    """إنشاء اتصال جديد بقاعدة البيانات مع timeout أطول"""
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL")  # وضع WAL يحسن التوافق
+    return conn
+
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS subscriptions (user_id TEXT PRIMARY KEY, expiry TEXT)''')
     conn.commit()
@@ -34,51 +40,64 @@ def is_subscribed(user_id):
     user_id = str(user_id)
     if user_id == str(OWNER_ID):
         return True
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        expiry = datetime.fromisoformat(row[0])
-        if datetime.now() < expiry:
-            return True
-        else:
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-            c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
-            conn.commit()
-            conn.close()
-    return False
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            expiry = datetime.fromisoformat(row[0])
+            if datetime.now() < expiry:
+                return True
+            else:
+                conn = get_db_connection()
+                c = conn.cursor()
+                c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
+                conn.commit()
+                conn.close()
+        return False
+    except Exception as e:
+        print(f"DB Error in is_subscribed: {e}")
+        return False
 
 def add_subscription(user_id, duration_hours):
     user_id = str(user_id)
     expiry = datetime.now() + timedelta(hours=duration_hours)
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO subscriptions (user_id, expiry) VALUES (?, ?)", (user_id, expiry.isoformat()))
-    conn.commit()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("INSERT OR REPLACE INTO subscriptions (user_id, expiry) VALUES (?, ?)", (user_id, expiry.isoformat()))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"DB Error in add_subscription: {e}")
+        return False
 
 def get_subscription_time(user_id):
     user_id = str(user_id)
     if user_id == str(OWNER_ID):
         return "دائم"
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
-    row = c.fetchone()
-    conn.close()
-    if row:
-        expiry = datetime.fromisoformat(row[0])
-        remaining = expiry - datetime.now()
-        hours = int(remaining.total_seconds() // 3600)
-        minutes = int((remaining.total_seconds() % 3600) // 60)
-        if hours > 0:
-            return f"{hours}س {minutes}د"
-        elif minutes > 0:
-            return f"{minutes}د"
-    return "غير مشترك"
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            expiry = datetime.fromisoformat(row[0])
+            remaining = expiry - datetime.now()
+            hours = int(remaining.total_seconds() // 3600)
+            minutes = int((remaining.total_seconds() % 3600) // 60)
+            if hours > 0:
+                return f"{hours}س {minutes}د"
+            elif minutes > 0:
+                return f"{minutes}د"
+        return "غير مشترك"
+    except Exception as e:
+        print(f"DB Error in get_subscription_time: {e}")
+        return "خطأ"
 
 def parse_duration(text):
     text = text.strip().lower()
@@ -96,7 +115,6 @@ def parse_duration(text):
     return None
 
 init_db()
-add_subscription(OWNER_ID, 87600)
 
 # =============== جميع الكلمات القوية ===============
 VERBS_POWER = [
@@ -308,6 +326,7 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
         word = generate_millions_takleesh()
         try:
             await client.send_message(target, word)
+            await bot.send_message(chat_id, f"✅ [{i+1}/{count}] تم الارسال")
         except Exception as e:
             await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
             break
@@ -337,12 +356,13 @@ async def send_tasteer_messages(user_id, target, lines, chat_id):
         word = generate_millions_tasteer()
         try:
             await client.send_message(target, word)
+            await bot.send_message(chat_id, f"✅ [{i+1}/{lines}] تم الارسال")
         except Exception as e:
             await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
             break
         await asyncio.sleep(3)
     
-    await bot.send_message(chat_id, f"✅ تم إرسال {lines} سطر تسطير")
+    await bot.send_message(chat_id, f"✅ تم إرسال {lines} سطر")
     if user_id in active_spams:
         del active_spams[user_id]
 
@@ -356,7 +376,7 @@ async def start(message):
         "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
         "<b>🔥 TNT SHADOW BOT 🔥</b>\n"
         "<b>━━━━━━━━━━━━━━━━━━━━</b>\n\n"
-        f"<b>✧ welcome {name}</b>\n"
+        f"<b>✧ مرحبا {name}</b>\n"
         f"<b>✧ الاشتراك : {status}</b>\n\n"
         "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
         "<b>⚡ الاوامر</b>\n"
@@ -448,7 +468,7 @@ async def gift_subscription(message):
             add_subscription(target_id, hours)
             await bot.reply_to(message, f"✅ تم تفعيل اشتراك {target_id}")
             try:
-                await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك بواسطة الأونر {OWNER_USERNAME}")
+                await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {args[2]} بواسطة الأونر {OWNER_USERNAME}")
             except:
                 pass
     except:
@@ -464,7 +484,7 @@ async def login(message):
         await bot.reply_to(message, "✅ مسجل بالفعل")
         return
     user_steps[user_id] = {"step": "waiting_phone"}
-    await bot.reply_to(message, "📱 أرسل رقمك مع +\nمثال: +966512345678")
+    await bot.reply_to(message, "📱 ارسل رقمك مع +\nمثال: +966512345678")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_phone")
 async def handle_phone(message):
@@ -473,11 +493,11 @@ async def handle_phone(message):
     if not phone.startswith('+'):
         await bot.reply_to(message, "❌ الرقم يبدأ بـ +")
         return
-    await bot.reply_to(message, "⏳ جاري إرسال الكود...")
+    await bot.reply_to(message, "⏳ جاري ارسال الكود...")
     result = await send_code_telethon(user_id, phone)
     if result is True:
         user_steps[user_id] = {"step": "waiting_code"}
-        await bot.reply_to(message, "✅ تم إرسال الكود\nأدخل الكود بمسافات:\nمثال: 1 2 3 4 5")
+        await bot.reply_to(message, "✅ تم ارسال الكود\nادخل الكود بارقام فقط:\nمثال: 12345")
     else:
         await bot.reply_to(message, f"❌ فشل: {result}")
         del user_steps[user_id]
@@ -487,7 +507,7 @@ async def handle_code(message):
     user_id = message.from_user.id
     code = message.text.strip().replace(" ", "")
     if not code.isdigit():
-        await bot.reply_to(message, "❌ الكود أرقام فقط")
+        await bot.reply_to(message, "❌ الكود ارقام فقط")
         return
     result = await verify_code_telethon(user_id, code)
     if result is True:
@@ -495,7 +515,7 @@ async def handle_code(message):
         await bot.reply_to(message, "✅ تم الدخول\n/takleesh\n/tasteer")
     elif result == "password_needed":
         user_steps[user_id] = {"step": "waiting_password"}
-        await bot.reply_to(message, "🔐 أرسل كلمة المرور:")
+        await bot.reply_to(message, "🔐 ارسل كلمة المرور:")
     else:
         await bot.reply_to(message, "❌ كود خطأ")
         del user_steps[user_id]
@@ -525,7 +545,7 @@ async def takleesh(message):
         await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     user_steps[user_id] = {"step": "takleesh_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
+    await bot.reply_to(message, "🎯 ارسل معرف المستهدف (@username او ID):")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
 async def takleesh_target(message):
@@ -546,7 +566,7 @@ async def takleesh_count(message):
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"⚡ جاري ارسال {count} كليشة (3 ثواني)")
+    await bot.reply_to(message, f"⚡ جاري ارسال {count} كليشة (3 ثواني بين كل كليشة)")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -563,7 +583,7 @@ async def tasteer(message):
         await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     user_steps[user_id] = {"step": "tasteer_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
+    await bot.reply_to(message, "🎯 ارسل معرف المستهدف (@username او ID):")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
 async def tasteer_target(message):
@@ -584,7 +604,7 @@ async def tasteer_lines(message):
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"🚀 جاري ارسال {lines} سطر (3 ثواني)")
+    await bot.reply_to(message, f"🚀 جاري ارسال {lines} سطر (3 ثواني بين كل سطر)")
     asyncio.create_task(send_tasteer_messages(user_id, target, lines, message.chat.id))
     del user_steps[user_id]
 
@@ -601,15 +621,16 @@ flask_app = Flask(__name__)
 
 @flask_app.route('/')
 def home():
-    return "TNT?¿ Bot is running!"
+    return "TNT SHADOW Bot is running!"
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
     flask_app.run(host='0.0.0.0', port=port)
 
 async def main():
-    print("🔥 TNT?¿ SHADOW BOT is running...")
+    print("🔥 TNT SHADOW BOT is running...")
     print("✅ 3 ثواني بين كل رسالة")
+    print("✅ مشكلة قاعدة البيانات تم حلها")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
 
