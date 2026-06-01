@@ -15,6 +15,7 @@ API_ID = 30874435
 API_HASH = "cc3b98786456de26fe5e803910051cea"
 BOT_TOKEN = "8817608659:AAF8O-I58x-khZLq4AzY-OWTyfgPIcNEo1M"
 OWNER_ID = 8603631953
+OWNER_USERNAME = "@Dwojj"
 
 user_sessions = {}
 active_spams = {}
@@ -77,7 +78,7 @@ def get_subscription_time(user_id):
             return f"{hours}س {minutes}د"
         elif minutes > 0:
             return f"{minutes}د"
-    return "❌"
+    return "غير مشترك"
 
 def parse_duration(text):
     text = text.strip().lower()
@@ -97,37 +98,109 @@ def parse_duration(text):
 init_db()
 add_subscription(OWNER_ID, 87600)
 
-# =============== الكلمات القوية ===============
+# ==================================================
+# =============== جميع الكلمات القوية (كاملة) ===============
+# ==================================================
+
 VERBS_POWER = [
     "لحلكك", "اشيلك", "عبالك", "انيجمك", "مصمص", "اهف", "اربطك", "اطحن", "اكهرب", "احط",
-    "اقتحم", "اخدر", "انيج", "ربك", "اعبد", "ادحس", "افلش", "اذب", "اكعد", "ازورك"
+    "اقتحم", "اخدر", "انيج", "ربك", "اعبد", "ادحس", "افلش", "اذب", "اكعد", "ازورك", "اصعق",
+    "اطشر", "اعجن", "اشكه", "اشنقك", "ابعبص", "اتفل", "اتسودن", "اتنايج", "اخرمش", "انكز",
+    "اصمل", "اضرب", "اخلي", "ارمي", "احبس", "اذبح", "احرق", "اخرب", "ادمر", "اكسر", "افلق",
+    "اشطر", "اشيل", "انفخ", "اطلق", "ارجف", "اخلع", "اقلع", "احشي", "اعشي", "افشي", "اقتلع",
+    "احتل", "اسلب", "انهب", "احتج", "اسجن", "اعذب", "احكم", "اسود", "احمر", "اصفر", "اخضر",
+    "ازرق", "ابيض", "اسود", "احلك", "انور", "اظلم", "اعدل", "اجور", "اطيب", "اخبث", "اطهر",
+    "انجس", "اطلق", "احبس", "اطرد", "اهجر", "اترك", "اخلع", "انزع", "اقطع", "احشي", "املأ"
 ]
 
 NOUNS_POWER = [
     "الهالبك", "بعيري", "تيزمك", "علصدرك", "عيورتي", "بقياطين", "ضلوعك", "قضيبي", "نسلك",
-    "زبي", "صريمك", "كسمك", "بكسختك", "براسك", "لكسمك", "بطيزك", "بكس امك", "بكسم اختك"
+    "زبي", "صريمك", "كسمك", "بكسختك", "براسك", "لكسمك", "بطيزك", "بكس امك", "بكسم اختك",
+    "بطيز اختك", "بكسم خويك", "بكس خواتك", "ديوسك", "نهود امك", "صرمك", "مخك", "طيزك",
+    "كس اختك", "كس امك", "عيري", "جبتي", "ربعك", "خواتك", "عيالك", "نياكة", "ديوس اختك",
+    "سلالتك", "اجدادك", "احفادك", "ذريتك", "عشيرتك", "قبيلتك", "فخذك", "بيتك", "دارك",
+    "ملكك", "كرسيك", "تاجك", "عرشك", "سلطانك", "حكمك", "قوتك", "جبروتك", "عزك", "شرفك",
+    "كرامتك", "مروتك", "رجولتك", "انوثتك", "رجلك", "انثاك", "ذكرك", "اناك", "انت", "نفسك"
 ]
 
 INSULTS_POWER = [
     "يا ابن الكلب", "يا ابن الشرموطه", "يا ابن القحبه", "يا ديوث", "يا خنيث", "يا ابن المتناكه",
-    "يا ابن العاهره", "يا ابن الدعاره", "يا ابن الزانيه", "يا خول", "يا جرار", "يا منيوك"
+    "يا ابن العاهره", "يا ابن الدعاره", "يا ابن الزانيه", "يا ابن الكحبه", "يا ابن العرص",
+    "يا خول", "يا جرار", "يا منيوك", "يا فحل اختك", "يا فحل امك", "يا ابن الحمار", "يا ابن البقره",
+    "يا ابن الخنزير", "يا كلب", "يا حمار", "يا تيس", "يا قرد", "يا خنزير", "يا نجس", "يا رجس",
+    "يا وسخ", "يا جربان", "يا معفن", "يا خبيث", "يا رذيل", "يا حقير", "يا دنيء", "يا فاسق",
+    "يا فاجر", "يا ملوث", "يا زب", "يا كس", "يا عير", "يا طيز", "يا شرموط", "يا قحبه", "يا عاهرة",
+    "يا نتن", "يا مقرف", "يا مستقذر", "يا منحط", "يا سافل", "يا نذل", "يا لئيم", "يا وغد",
+    "يا داعر", "يا فاجر", "يا منافق", "يا كذاب", "يا زبالة", "يا قمامة", "يا وساخة", "يا دنس"
 ]
 
 VERBS_EXTRA = [
-    "كس امك", "كسمك", "كس اختك", "كسم امك", "انيك امك", "انيك اختك", "اطحن مخك", "افطر كبدك",
-    "احرق بيتكم", "اخرب عليك", "افضحك", "ادمر حياتك", "اقتلك", "اذبحك"
+    "كس امك", "كسمك", "كس اختك", "كسم امك", "كس عرضك", "كسم عرضك", "انيك امك", "انيك اختك",
+    "انيك كس امك", "انيك كس اختك", "اطحن مخك", "افطر كبدك", "اشرب دمك", "اكل لحمك", "احرق بيتكم",
+    "اخرب عليك", "افضحك", "احرجك", "فضحتنا", "اخليك تندم", "اخليك تبكي", "اخليك تصيح",
+    "اخلي عيالك يبكون", "اخلي زوجتك تطلقك", "اخلي اهلك يتبرون منك", "ادمر حياتك", "اخليك فاشل",
+    "اقتلك", "اذبحك", "اطلق عليك", "اخنقك", "اغتصب نسلك", "انيك تربيتك", "افضح سمعتك",
+    "احرق مستقبلك", "ادمر احلامك", "اكسر طموحاتك", "احبس امالك", "انسي وجودك", "امحي ذكرك"
 ]
 
 SAUDI_STRONG = [
-    "يابنالقحبه", "شرموطه", "فحلمك", "يابن الزانيا", "انيكمك", "خنيث", "ديوث", "قحبه", "عاهرة",
-    "منيوك", "جرار", "سافل", "نذل", "حقير", "فاشل", "غبي", "جاهل", "ارعن", "جبان"
+    "يابنالقحبه", "شرموطه", "فحلمك", "يابن الزانيا", "انيكمك", "ركلمتك", "قذفتكمك",
+    "خنيث", "ديوث", "قحبه", "عاهرة", "منيوك", "جرار", "سافل", "نذل", "حقير", "وضيع", "خسيس",
+    "لئيم", "دنيء", "ماين", "فاشل", "تافه", "غبي", "جاهل", "متخلف", "رجعي", "ظلامي", "ارعن",
+    "جبان", "خواف", "نعامة", "فأر", "صرصور", "ذباب", "علق", "برغوث", "قمل", "ديدان", "عفن",
+    "زباله", "قمامه", "وسخ", "قذر", "نجس", "رجس", "ملوث", "فاسد", "منحط", "ساقط", "هابط",
+    "تافه", "سخيف", "مثير للشفقة", "محزن", "مخزي", "عار", "فضيحة", "شنار", "خزي", "ذل", "هوان",
+    "لعنة", "طرد", "لعن", "سب", "شتم", "قذف", "تهمة", "افتراء", "كذب", "زور", "بهتان", "نفاق", "رياء",
+    "خداع", "غش", "احتيال", "مكر", "كيد", "خبث", "دهاء", "دهس", "دعس", "وطء", "ركل", "لكم",
+    "صفع", "ضرب", "جلد", "عقر", "جرح", "قطع", "كسر", "حطم", "سحق", "طحن", "فلك", "شظى", "تمزق",
+    "انفجار", "احتراق", "تسمم", "خنق", "ذبح", "نحر", "صلب", "تقطيع", "تمزيق", "تحطيم", "تدمير"
+]
+
+EXTRA_STRONG_WORDS = [
+    "يابن المتناك", "يابن الزاني", "يابن الفاجر", "يابن الخاين", "يابن الحقير", "يابن الوضيع",
+    "يابن الخسيس", "يابن الدنيء", "يابن التافه", "يابن السخيف", "يا كافر", "يا منافق", "يا مرتد",
+    "يا ملحد", "يا زنديق", "يا فاجر", "يا ظالم", "يا غاشم", "يا طاغية", "يا مستبد", "يا دكتاتور",
+    "خنزير ابن خنزير", "كلب ابن كلب", "حمار ابن حمار", "تيس ابن تيس", "قرد ابن قرد", "فأر ابن فأر",
+    "صرصور ابن صرصور", "ذبابة ابن ذبابة", "علق ابن علق", "برغوث ابن برغوث", "قملة ابن قملة",
+    "دودة ابن دودة", "عفنة ابن عفنة", "زبالة ابن زبالة", "قمامة ابن قمامة", "وسخة ابن وسخة"
+]
+
+TASTEER_STRONG = [
+    "كس امك", "كسمك", "كس اختك", "كسم امك", "كس عرضك", "كسم عرضك", "انيك امك", "انيك اختك",
+    "انيك كس امك", "انيك كس اختك", "اطحن مخك", "افطر كبدك", "اشرب دمك", "اكل لحمك", "احرق بيتكم",
+    "اخرب عليك", "افضحك", "احرجك", "فضحتنا", "اخليك تندم", "اخليك تبكي", "اخليك تصيح",
+    "اخلي عيالك يبكون", "اخلي زوجتك تطلقك", "اخلي اهلك يتبرون منك", "ادمر حياتك", "اخليك فاشل",
+    "اقتلك", "اذبحك", "اطلق عليك", "اخنقك", "اغتصب نسلك", "انيك تربيتك", "افضح سمعتك",
+    "احرق مستقبلك", "ادمر احلامك", "اكسر طموحاتك", "احبس امالك", "انسي وجودك", "امحي ذكرك"
+]
+
+MISC_STRONG = [
+    "امك ديوثة", "اختك شرموطة", "خواتك كحبات", "نسلك منيوك", "عيلتك كلها زبالة", "اهلك كلهم كلاب",
+    "بيتك قمامة", "دارك وسخة", "حياتك فاشلة", "مستقبلك مظلم", "طموحاتك محطمة", "احلامك مسروقة",
+    "امالك ضائعة", "وجودك تافه", "ذكرك منسي", "اسمك ملعون", "صورتك مشوهة", "سمعتك مدمرة",
+    "كرامتك مهانة", "شرفك مداس", "عزك مذلول", "قوتك منهزمة", "جبروتك محطم", "سلطانك منتهي"
 ]
 
 ENDING_STRONG = [
-    "وخر", "وانتهى", "والسلام", "والله لا يعود", "واخرتها معي", "وعقباك النار", "والعار لك"
+    "وخر", "وانتهى", "والسلام", "والله لا يعود", "واخرتها معي", "وتوبتك عندي", "وعقباك النار",
+    "ومنها لله", "والله غالب", "والنصر لنا", "والخذلان عليك", "والعار لك", "والفضيحة بوجهك",
+    "والذل لك", "والهوان عليك", "واللعنة على تربيتك", "والطرد لك", "والبعد عنا", "والنهاية لك"
 ]
 
-def generate_takleesh():
+NEW_STRONG_WORDS = [
+    "يا ابن الكلب الأجرب", "يا ابن القحبة المنتنة", "يا شرموطة شارع", "يا ديوث الحارة", "يا خنيث العائلة",
+    "يا منيوك الزبالة", "يا جرار القمامة", "يا فاشل الدرجة الأولى", "يا تافه المستوى", "يا غبي بامتياز",
+    "يا جاهل مركب", "يا متخلف وراثياً", "يا ظلامي العقل", "يا ارعن الطباع", "يا جبان العصر",
+    "يا خواف المشهور", "يا نعامة الصحراء", "يا فأر المجاري", "يا صرصور الحمام", "يا ذبابة المطبخ",
+    "علقة بنت علقة", "برغوث بنت برغوث", "قملة بنت قملة", "دودة بنت دودة", "عفنة بنت عفنة",
+    "زبالة بنت زبالة", "قمامة بنت قمامة", "وسخة بنت وسخة", "نتانة بنت نتانة", "مقرف بنت مقرف"
+]
+
+# ==================================================
+# =============== دوال التوليد (كاملة) ===============
+# ==================================================
+
+def generate_millions_takleesh():
     parts = []
     parts.append(random.choice(VERBS_POWER))
     parts.append(random.choice(NOUNS_POWER))
@@ -135,19 +208,40 @@ def generate_takleesh():
     parts.append(random.choice(VERBS_EXTRA))
     parts.append(random.choice(SAUDI_STRONG))
     
+    if random.random() > 0.3:
+        parts.append(random.choice(INSULTS_POWER))
+        parts.append(random.choice(SAUDI_STRONG))
+        parts.append(random.choice(EXTRA_STRONG_WORDS))
+    
     if random.random() > 0.5:
+        parts.append("و")
         parts.append(random.choice(VERBS_EXTRA))
+        parts.append(random.choice(SAUDI_STRONG))
         parts.append(random.choice(ENDING_STRONG))
+    
+    if random.random() > 0.7:
+        parts.append(random.choice(MISC_STRONG))
+        parts.append(random.choice(ENDING_STRONG))
+    
+    if random.random() > 0.8:
+        parts.append(random.choice(NEW_STRONG_WORDS))
     
     return " ".join(parts)
 
-def generate_tasteer():
+def generate_millions_tasteer():
     patterns = [
-        f"{random.choice(VERBS_EXTRA)} {random.choice(INSULTS_POWER)}",
-        f"{random.choice(SAUDI_STRONG)} {random.choice(VERBS_EXTRA)}",
-        f"يا {random.choice(INSULTS_POWER)} يا {random.choice(SAUDI_STRONG)}",
-        f"{random.choice(VERBS_EXTRA)} يا {random.choice(INSULTS_POWER)}",
-        f"{random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)}",
+        f"{random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)} {random.choice(SAUDI_STRONG)}",
+        f"{random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
+        f"يا {random.choice(INSULTS_POWER)} يا {random.choice(SAUDI_STRONG)} يا {random.choice(TASTEER_STRONG)}",
+        f"{random.choice(TASTEER_STRONG)} يا {random.choice(SAUDI_STRONG)} {random.choice(INSULTS_POWER)}",
+        f"{random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)}",
+        f"انيك {random.choice(SAUDI_STRONG)} و{random.choice(TASTEER_STRONG)} يا {random.choice(INSULTS_POWER)}",
+        f"{random.choice(SAUDI_STRONG)} انت واهلك كلهم {random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
+        f"{random.choice(INSULTS_POWER)} {random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)} يا خنيث",
+        f"{random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)}",
+        f"{random.choice(EXTRA_STRONG_WORDS)} {random.choice(TASTEER_STRONG)} {random.choice(ENDING_STRONG)}",
+        f"{random.choice(MISC_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(INSULTS_POWER)}",
+        f"{random.choice(NEW_STRONG_WORDS)} {random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
     ]
     return random.choice(patterns)
 
@@ -218,7 +312,7 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
         if active_spams[user_id]["stop"]:
             await bot.send_message(chat_id, "🛑 تم الإيقاف")
             break
-        word = generate_takleesh()
+        word = generate_millions_takleesh()
         try:
             await client.send_message(target, word)
         except Exception as e:
@@ -230,7 +324,7 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
     if user_id in active_spams:
         del active_spams[user_id]
 
-async def send_tasteer_messages(user_id, target, lines, delay, chat_id):
+async def send_tasteer_messages(user_id, target, lines, chat_id):
     if not is_subscribed(user_id):
         await bot.send_message(chat_id, "❌ اشتراك مطلوب: /subscribe")
         return
@@ -247,7 +341,7 @@ async def send_tasteer_messages(user_id, target, lines, delay, chat_id):
         if active_spams[user_id]["stop"]:
             await bot.send_message(chat_id, "🛑 تم الإيقاف")
             break
-        word = generate_tasteer()
+        word = generate_millions_tasteer()
         try:
             await client.send_message(target, word)
         except Exception as e:
@@ -255,31 +349,35 @@ async def send_tasteer_messages(user_id, target, lines, delay, chat_id):
             break
         await asyncio.sleep(3)
     
-    await bot.send_message(chat_id, f"✅ تم إرسال {lines} سطر")
+    await bot.send_message(chat_id, f"✅ تم إرسال {lines} سطر تسطير")
     if user_id in active_spams:
         del active_spams[user_id]
 
+# ==================================================
 # =============== أوامر البوت ===============
+# ==================================================
+
 @bot.message_handler(commands=['start'])
 async def start(message):
-    user_id = message.from_user.id
-    status = get_subscription_time(user_id)
+    status = get_subscription_time(message.from_user.id)
     
     photo_url = "https://l.top4top.io/p_3804s3rqj0.jpg"
     caption = f"""
 <b>🔥 TNT?¿ SHADOW BOT 🔥</b>
 
+<b>👤 المستخدم:</b> <code>{message.from_user.first_name}</code>
 <b>⭐ حالتك:</b> {status}
 
 <b>📋 الأوامر:</b>
-/login - تسجيل دخول
-/takleesh - تكليش
-/tasteer - تسطير
-/stop - إيقاف
-/subscribe - اشتراك
-/myplan - باقي الاشتراك
+🔐 <code>/login</code> - تسجيل دخول
+💣 <code>/takleesh</code> - تكليش
+🔪 <code>/tasteer</code> - تسطير
+🛑 <code>/stop</code> - إيقاف
+⭐ <code>/subscribe</code> - اشتراك
+📋 <code>/myplan</code> - باقي الاشتراك
 
-<b>👑 @Dwojj</b>
+<b>👑 المبرمج:</b> الداهية ايليا الملائكة
+<b>🤖 الاونر:</b> {OWNER_USERNAME}
 """
     await bot.send_photo(message.chat.id, photo_url, caption=caption, parse_mode="HTML")
 
@@ -287,10 +385,10 @@ async def start(message):
 async def subscribe(message):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
-        InlineKeyboardButton("⭐ ساعة - 15", callback_data="sub_hour"),
-        InlineKeyboardButton("⭐ يوم - 50", callback_data="sub_day"),
-        InlineKeyboardButton("⭐ اسبوع - 150", callback_data="sub_week"),
-        InlineKeyboardButton("⭐ شهر - 250", callback_data="sub_month")
+        InlineKeyboardButton("⭐ ساعة - 15 نجمة", callback_data="sub_hour"),
+        InlineKeyboardButton("⭐ يوم - 50 نجمة", callback_data="sub_day"),
+        InlineKeyboardButton("⭐ اسبوع - 150 نجمة", callback_data="sub_week"),
+        InlineKeyboardButton("⭐ شهر - 250 نجمة", callback_data="sub_month")
     )
     await bot.reply_to(message, "⭐ اختر مدة الاشتراك:", reply_markup=markup)
 
@@ -357,7 +455,7 @@ async def gift_subscription(message):
             add_subscription(target_id, hours)
             await bot.reply_to(message, f"✅ تم تفعيل اشتراك {target_id}")
             try:
-                await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك بواسطة الأونر")
+                await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك بواسطة الأونر {OWNER_USERNAME}")
             except:
                 pass
     except:
@@ -434,14 +532,14 @@ async def takleesh(message):
         await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     user_steps[user_id] = {"step": "takleesh_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف (@username أو ID):")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
 async def takleesh_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "takleesh_count", "target": target}
-    await bot.reply_to(message, "🔢 كم رسالة؟")
+    await bot.reply_to(message, "🔢 كم رسالة؟ (مثال: 10, 50, 100)")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
 async def takleesh_count(message):
@@ -472,14 +570,14 @@ async def tasteer(message):
         await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     user_steps[user_id] = {"step": "tasteer_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف (@username أو ID):")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
 async def tasteer_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "tasteer_lines", "target": target}
-    await bot.reply_to(message, "🔢 كم سطر؟")
+    await bot.reply_to(message, "🔢 كم سطر؟ (مثال: 5, 10, 20)")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_lines")
 async def tasteer_lines(message):
@@ -492,24 +590,9 @@ async def tasteer_lines(message):
         await bot.reply_to(message, "❌ عدد غير صالح")
         del user_steps[user_id]
         return
-    user_steps[user_id] = {"step": "tasteer_delay", "target": user_steps[user_id]["target"], "lines": lines}
-    await bot.reply_to(message, "⏱️ السرعة (ثانية):")
-
-@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_delay")
-async def tasteer_delay(message):
-    user_id = message.from_user.id
-    try:
-        delay = float(message.text.strip())
-        if delay < 0.5:
-            raise ValueError
-    except:
-        await bot.reply_to(message, "❌ سرعة غير صالحة")
-        del user_steps[user_id]
-        return
     target = user_steps[user_id]["target"]
-    lines = user_steps[user_id]["lines"]
-    await bot.reply_to(message, f"🚀 بدء إرسال {lines} سطر (3 ثواني بين كل سطر)")
-    asyncio.create_task(send_tasteer_messages(user_id, target, lines, delay, message.chat.id))
+    await bot.reply_to(message, f"🚀 بدء إرسال {lines} سطر تسطير (3 ثواني بين كل سطر)")
+    asyncio.create_task(send_tasteer_messages(user_id, target, lines, message.chat.id))
     del user_steps[user_id]
 
 @bot.message_handler(commands=['stop'])
@@ -532,8 +615,9 @@ def run_flask():
     flask_app.run(host='0.0.0.0', port=port)
 
 async def main():
-    print("🔥 TNT?¿ BOT is running...")
-    print("✅ 3 ثواني بين الكليشات")
+    print("🔥 TNT?¿ SHADOW BOT is running...")
+    print("✅ جميع الكلمات والكليشات الأصلية موجودة")
+    print("✅ 3 ثواني بين كل رسالة")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
 
