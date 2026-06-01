@@ -72,6 +72,520 @@ def get_subscription_time(user_id):
         expiry = datetime.fromisoformat(row[0])
         remaining = expiry - datetime.now()
         hours = int(remaining.total_seconds() // 3600)
+        minutes = int((remaining.total_seconds() % 3600) // 60)
+        if hours > 0:
+            return f"{hours} ساعة و {minutes} دقيقة متبقية"
+        elif minutes > 0:
+            return f"{minutes} دقيقة متبقية"
+    return "غير مشترك"
+
+def parse_duration(text):
+    text = text.strip().lower()
+    if text in ["نص ساعة", "نص ساعه"]:
+        return 0.5
+    match = re.match(r'(\d+(?:\.\d+)?)\s*(دقيقة|دقائق|د)', text)
+    if match:
+        return float(match.group(1)) / 60
+    match = re.match(r'(\d+(?:\.\d+)?)\s*(ساعة|ساعات|س)', text)
+    if match:
+        return float(match.group(1))
+    match = re.match(r'(\d+(?:\.\d+)?)\s*(يوم|أيام|ي)', text)
+    if match:
+        return float(match.group(1)) * 24
+    return None
+
+init_db()
+add_subscription(OWNER_ID, 87600)
+
+# =============== كلمات التكليش (كليشات كاملة) ===============
+TAKLEESH_WORDS = [
+    "لحلكك الهالبك طيزمك يا ابن الكلب", "اشيلك بعيري يا ابن الشرموطه", "عبالك اعوفك؟ اني المفروض انيك كس امك", "انيجمك علصدرك يا ابن الزانيه", "غير انت ابني يا ابن القحبه", "مصمص عيورتي يا ابن العاهره", "اهف اختك بطرف عيري يا ديوث", "اربطك بقياطين قندرتي يا ابن الكحبه", "اشيل ربك واركعه بلكاع يا خنيث", "اطحن ضلوعك يا ابن المتناكه", "اكهرب طيزك يا ابن الشرموطه", "احط قضيبي بكس امك يا ابن الدعاره", "اقتحم نسلك يا ابن الزنا", "اخدر امك يا ابن الكلب", "انيج امك الكحبه يا ابن العرص", "ربك اسمطه يا ابن الفاعله", "اعبد زبي يا خول", "المخنث يا ابن الديوث", "اطشر صريمك يا ابن الحمار", "افلشك تفليش يا ابن البقره", "اذب تيزاب بكسمك يا ابن الخنزير", "انيج رب ربك يا ابن الكس", "افترس طيزك يا ابن الوسخه", "ابن الكحبه اليوم اشوي على كسمك", "ادحسه بكسختك يا ابن الشرموطه", "عيري براسك يا ديوث", "ولك شبيك خفت يا جبان", "اخضع لجباتي الحاره يا خنيث", "اشكه لكسمك وعلي يا ابن القحبه", "ادحس الكعبه بطيزك يا ابن الزانيه", "ابن القندره يا ابن المتناك", "ازورك وجهك بعيري يا ابن الكلب", "اصابعي تفترسك يا ابن العرص", "اختك كحبتي يا ديوث", "اله اشكه لحلكك يا ابن الشرموطه", "انزل لعنه عيري بكسمك يا ابن الخنزير", "شو دتعال يا جبان", "ابن المتبربكه يا ابن القحبه", "دشوف شراح اسوي فيك يا ابن الكلب", "اتفل بصرمك يا ابن الخول", "احط عيورتي بطيزمك يا ابن الزاني", "ادحس رجلي بكس اختك يا ديوث", "ولك تعال مصعيري يا ابن الشرموطه", "انكز على صريمك يا ابن العرص", "اشنقك بلباس امك يا خنيث", "احط امك بطيزك يا ابن المتناكه", "ابن الهايته يا ابن الدعاره", "امك احطها بعيري يا ابن الزنا", "ابن الربل يا ابن الكلب", "ابن مصاصه عيورتي يا خول", "اتناطح وي عنابه امك يا ابن القحبه", "اصعد على ضهرك يا ابن الشرموطه", "نياج اختك اني يا ديوث", "ادحس البنكه بصرمك يا ابن المتناك", "ابعبص صريمك يا ابن العرص", "افلش كسمك تفليش يا ابن الكلب", "احط الويسكي بكس اختك يا خنيث", "اتسودن عليك يا ابن الشرموطه", "ابن كحباتي يا ابن القحبه", "اشلع شفايف امك يا ابن الزانيه", "اجنكل طيز اختك يا ديوث", "ابن بلاعت العير يا ابن المتناكه", "اجك امك بعيري يا ابن الكلب", "امصمص ديوس اختك يا خول", "ابن المراهقه يا ابن القحبه", "اهف راس امك بل طاوه يا ابن الشرموطه", "اشكشك ديوسك يا ابن العرص", "اربطك بقياطين قندرتي يا ديوث"
+]
+
+# =============== كلمات التسطير (كلمات قوية) ===============
+TASTEER_WORDS = [
+    "كس امك يا ابن القحبه", "كسمك يا شرموطه", "كس اختك يا ديوث", "كسم امك يا ابن العاهره", "كس ام اهلك كلهم يا خنيث",
+    "ديوث يا ابن الديوث", "خنيث يا ابن الخنيث", "شرموطه يا ابن الشرموطه", "قحبه يا ابن القحبه", "عاهر يا ابن العاهر",
+    "خول يا ابن الخول", "قواد يا ابن القواد", "منيوك يا ابن المنيوك", "وسخ يا ابن الوسخ", "جربان يا ابن الجربان",
+    "نجس يا ابن النجس", "رجس يا ابن الرجس", "منفوح يا ابن المنفوح", "معفن يا ابن المعفن", "خبيث يا ابن الخبيث",
+    "رذيل يا ابن الرذيل", "حقير يا ابن الحقير", "دنيء يا ابن الدنيء", "فاسق يا ابن الفاسق", "فاجر يا ابن الفاجر",
+    "ملوث يا ابن الملوث", "زب الكلب يا ابن الزب", "ابن الكلب يا كلب", "ابن الحمار يا حمار", "ابن البقره يا بقره",
+    "تيس يا ابن التيوس", "يا حمار يا ابن الحمير", "يا كلب يا ابن الكلاب", "يا خنزير يا ابن الخنازير", "يا قرد يا ابن القرده",
+    "انيك كس امك يا شرموطه", "انيك اختك يا ديوث", "انيك امك يا قحبه", "كسمك يا ابن المتناكه", "كس عرضك يا ابن العرص",
+    "يا جرار يا ابن الجرار", "يا فحل اختك يا ديوث", "يا فحل امك يا خنيث", "انيك أمك ي جرار", "يا ابن الساقطه يا شرموطه",
+    "شو بك كس امك يا ديوث", "مسوي تسوي غبي صح يا خنيث", "يا ديوث يا فحل خواتك", "يا ابن الزقتين يا شرموطه",
+    "يا ابن المنيوكه يا قحبه", "يا ابن الزب يا ديوث", "يا ابن الوسيعه يا خنيث", "عار امك يا ابن القحبه",
+    "يا مخنث يا ابن المخانيث", "يا ابن الكس يا شرموطه", "يا ابن الهايته يا قحبه", "يا فحل اختك يا ديوث",
+    "يا كس امك يا ابن العاهره", "يا زب الكلب يا ديوث"
+]
+
+# =============== دمج الكلمات لتكوين كليشات جديدة ===============
+def generate_takleesh():
+    """توليد كليشة عشوائية من الكلمات المدمجة"""
+    parts = [
+        random.choice(["لحلكك", "اشيلك", "عبالك", "انيجمك", "امصمص", "اهف", "اربطك", "اطحن", "اكهرب", "احط", "اقتحم", "اخدر", "انيج", "ربك", "اعبد"]),
+        random.choice(["الهالبك", "بعيري", "تيزمك", "علصدرك", "عيورتي", "اختك", "بقياطين", "ضلوعك", "قضيبي", "نسلك", "امك", "اسمطه", "زبي", "صريمك"]),
+        random.choice(["طيزمك", "بكسمك", "بكسختك", "براسك", "لكسمك", "بطيزك", "بعيري", "بكس امك", "بكسم اختك", "بطيز اختك", "بكسم خويك", "بكس خواتك"]),
+        random.choice(["يا ابن", "يا ديوث", "يا خنيث", "يا شرموطه", "يا قحبه", "يا كلب", "يا حمار", "يا خول", "يا جرار", "يا منيوك"]),
+        random.choice(["القحبه", "الشرموطه", "العاهره", "المتناكه", "الديوث", "الخنيث", "الكلب", "الحمار", "الخول", "الزانيه", "الدعاره"])
+    ]
+    return " ".join(parts)
+
+bot = AsyncTeleBot(BOT_TOKEN)
+
+async def send_code_telethon(user_id, phone):
+    try:
+        client = TelegramClient(":memory:", API_ID, API_HASH)
+        await client.connect()
+        if not await client.is_user_authorized():
+            await client.send_code_request(phone)
+            user_sessions[user_id] = {"client": client, "phone": phone, "step": "waiting_code"}
+            return True
+        else:
+            user_sessions[user_id] = {"client": client, "phone": phone, "step": "ready"}
+            return True
+    except Exception as e:
+        return str(e)
+
+async def verify_code_telethon(user_id, code):
+    data = user_sessions.get(user_id)
+    if not data or data.get("step") != "waiting_code":
+        return False
+    client = data["client"]
+    phone = data["phone"]
+    try:
+        await client.sign_in(phone, code=code)
+        user_sessions[user_id]["step"] = "ready"
+        return True
+    except SessionPasswordNeededError:
+        user_sessions[user_id]["step"] = "waiting_password"
+        return "password_needed"
+    except Exception as e:
+        return str(e)
+
+async def verify_password_telethon(user_id, password):
+    data = user_sessions.get(user_id)
+    if not data or data.get("step") != "waiting_password":
+        return False
+    client = data["client"]
+    try:
+        await client.sign_in(password=password)
+        user_sessions[user_id]["step"] = "ready"
+        return True
+    except Exception as e:
+        return str(e)
+
+def is_verified(user_id):
+    return user_id in user_sessions and user_sessions[user_id].get("step") == "ready"
+
+def get_client(user_id):
+    return user_sessions.get(user_id, {}).get("client")
+
+async def send_takleesh_messages(user_id, target, count, chat_id):
+    if not is_subscribed(user_id):
+        await bot.send_message(chat_id, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe")
+        return
+    if user_id in active_spams:
+        active_spams[user_id]["stop"] = False
+    else:
+        active_spams[user_id] = {"stop": False}
+    client = get_client(user_id)
+    if not client:
+        await bot.send_message(chat_id, "❌ خطأ في الجلسة")
+        return
+    for i in range(count):
+        if active_spams[user_id]["stop"]:
+            await bot.send_message(chat_id, "🛑 تم الإيقاف")
+            break
+        
+        # 70% كليشة عادية، 30% كليشة مدمجة جديدة
+        if random.random() < 0.7:
+            word = random.choice(TAKLEESH_WORDS)
+        else:
+            word = generate_takleesh()
+        
+        try:
+            await client.send_message(target, word)
+        except Exception as e:
+            await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
+            break
+        await asyncio.sleep(1)
+    await bot.send_message(chat_id, f"✅ تم إرسال {count} كليشة")
+    if user_id in active_spams:
+        del active_spams[user_id]
+
+async def send_tasteer_messages(user_id, target, delay, chat_id):
+    if not is_subscribed(user_id):
+        await bot.send_message(chat_id, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe")
+        return
+    if user_id in active_spams:
+        active_spams[user_id]["stop"] = False
+    else:
+        active_spams[user_id] = {"stop": False}
+    client = get_client(user_id)
+    if not client:
+        await bot.send_message(chat_id, "❌ خطأ في الجلسة")
+        return
+    for i in range(3):
+        if active_spams[user_id]["stop"]:
+            await bot.send_message(chat_id, "🛑 تم الإيقاف")
+            break
+        word = random.choice(TASTEER_WORDS)
+        try:
+            await client.send_message(target, word)
+        except Exception as e:
+            await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
+            break
+        await asyncio.sleep(delay)
+    await bot.send_message(chat_id, "✅ تم الانتهاء من التسطير")
+    if user_id in active_spams:
+        del active_spams[user_id]
+
+@bot.message_handler(commands=['start'])
+async def start(message):
+    user_id = message.from_user.id
+    status = get_subscription_time(user_id)
+    await bot.reply_to(message, f"""
+<b>🔥 بوت فـشـار الاحترافي 🔥</b>
+
+━━━━━━━━━━━━━━━━━━━━
+<b>🤖 المبرمج:</b> <i>الداهية ايليا الملائكة</i>
+<b>👑 الاونر:</b> <i>@Dwojj</i>
+━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 حالة الاشتراك:</b> {status}
+
+<b>⚡ الأوامر المتاحة:</b>
+• /login - تسجيل الدخول بحسابك
+• /takleesh - بدء التكليش (يصل 1000+ كليشة)
+• /tasteer - بدء التسطير (كلمات قوية)
+• /stop - إيقاف العملية
+• /subscribe - الاشتراك بالبوت
+• /myplan - معرفة باقي اشتراكك
+• /gift - للأونر فقط
+
+━━━━━━━━━━━━━━━━━━━━
+<i>البوّاب اللي يفتح لك أبواب العيور</i>
+""", parse_mode="HTML")
+
+@bot.message_handler(commands=['subscribe'])
+async def subscribe(message):
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        InlineKeyboardButton("⭐ ساعة - 15 نجمة", callback_data="sub_hour"),
+        InlineKeyboardButton("⭐ يوم - 50 نجمة", callback_data="sub_day"),
+        InlineKeyboardButton("⭐ أسبوع - 150 نجمة", callback_data="sub_week"),
+        InlineKeyboardButton("⭐ شهر - 250 نجمة", callback_data="sub_month")
+    )
+    await bot.reply_to(message, "⭐ اختر مدة الاشتراك:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("sub_"))
+async def handle_subscription(call):
+    plans = {
+        "sub_hour": {"stars": 15, "hours": 1, "name": "ساعة", "price": 15},
+        "sub_day": {"stars": 50, "hours": 24, "name": "يوم", "price": 50},
+        "sub_week": {"stars": 150, "hours": 168, "name": "أسبوع", "price": 150},
+        "sub_month": {"stars": 250, "hours": 720, "name": "شهر", "price": 250}
+    }
+    plan = plans.get(call.data)
+    if plan:
+        await bot.answer_callback_query(call.id)
+        prices = [LabeledPrice(label=f"⭐ {plan['name']}", amount=plan['price'])]
+        await bot.send_invoice(
+            chat_id=call.message.chat.id,
+            title=f"اشتراك {plan['name']} - فشار بوت",
+            description=f"تفعيل اشتراك {plan['name']} في بوت فشار\n\n⭐ السعر: {plan['stars']} نجمة\n⏰ المدة: {plan['name']}\n💪 كليشات لا نهائية",
+            invoice_payload=f"sub_{plan['name']}_{plan['hours']}",
+            provider_token="",
+            currency="XTR",
+            prices=prices,
+            need_name=False,
+            need_phone_number=False,
+            need_email=False,
+            need_shipping_address=False,
+            is_flexible=False
+        )
+
+@bot.pre_checkout_query_handler(func=lambda query: True)
+async def checkout(pre_checkout_query):
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
+@bot.message_handler(content_types=['successful_payment'])
+async def successful_payment(message):
+    user_id = message.from_user.id
+    payload = message.successful_payment.invoice_payload
+    
+    if "ساعة" in payload:
+        hours = 1
+        name = "ساعة"
+    elif "يوم" in payload:
+        hours = 24
+        name = "يوم"
+    elif "أسبوع" in payload:
+        hours = 168
+        name = "أسبوع"
+    elif "شهر" in payload:
+        hours = 720
+        name = "شهر"
+    else:
+        await bot.reply_to(message, "❌ حدث خطأ في الدفع")
+        return
+    
+    add_subscription(user_id, hours)
+    await bot.reply_to(message, f"✅ تم تفعيل اشتراكك لمدة {name} بنجاح!\nشكراً لدعمك 💫")
+
+@bot.message_handler(commands=['myplan'])
+async def myplan(message):
+    await bot.reply_to(message, f"📊 حالتك: {get_subscription_time(message.from_user.id)}")
+
+@bot.message_handler(commands=['gift'])
+async def gift_subscription(message):
+    if message.from_user.id != OWNER_ID:
+        await bot.reply_to(message, "❌ للأونر فقط @Dwojj")
+        return
+    
+    args = message.text.split(maxsplit=2)
+    if len(args) < 3:
+        await bot.reply_to(message, """❌ استخدم:
+/gift [ايدي] [المدة]
+
+📝 أمثلة:
+/gift 8619852744 5 دقائق
+/gift 8619852744 نص ساعة
+/gift 8619852744 3 ساعات
+/gift 8619852744 2 أيام
+""")
+        return
+    
+    try:
+        target_id = int(args[1])
+        duration_text = args[2].strip()
+        
+        hours = parse_duration(duration_text)
+        if hours is None:
+            await bot.reply_to(message, "❌ صيغة المدة غير صالحة")
+            return
+        
+        add_subscription(target_id, hours)
+        
+        if hours < 1:
+            minutes = int(hours * 60)
+            duration_str = f"{minutes} دقيقة"
+        elif hours < 24:
+            duration_str = f"{int(hours)} ساعة"
+        else:
+            days = int(hours / 24)
+            duration_str = f"{days} يوم"
+        
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراك للمستخدم {target_id} لمدة {duration_str}")
+        
+        try:
+            await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {duration_str} بواسطة الأونر @Dwojj")
+        except:
+            pass
+    except ValueError:
+        await bot.reply_to(message, "❌ ايدي المستخدم يجب أن يكون رقماً")
+    except Exception as e:
+        await bot.reply_to(message, f"❌ خطأ: {str(e)}")
+
+@bot.message_handler(commands=['login'])
+async def login(message):
+    user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        return
+    if is_verified(user_id):
+        await bot.reply_to(message, "✅ مسجل بالفعل")
+        return
+    user_steps[user_id] = {"step": "waiting_phone"}
+    await bot.reply_to(message, "📱 أرسل رقمك مع +\nمثال: +966512345678")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_phone")
+async def handle_phone(message):
+    user_id = message.from_user.id
+    phone = message.text.strip()
+    if not phone.startswith('+'):
+        await bot.reply_to(message, "❌ الرقم يبدأ بـ +")
+        return
+    await bot.reply_to(message, "⏳ جاري إرسال الكود...")
+    result = await send_code_telethon(user_id, phone)
+    if result is True:
+        user_steps[user_id] = {"step": "waiting_code"}
+        await bot.reply_to(message, "✅ تم إرسال الكود\nأدخل الكود بمسافات:\nمثال: 1 2 3 4 5")
+    else:
+        await bot.reply_to(message, f"❌ فشل: {result}")
+        del user_steps[user_id]
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_code")
+async def handle_code(message):
+    user_id = message.from_user.id
+    code = message.text.strip().replace(" ", "")
+    if not code.isdigit():
+        await bot.reply_to(message, "❌ الكود أرقام فقط")
+        return
+    result = await verify_code_telethon(user_id, code)
+    if result is True:
+        del user_steps[user_id]
+        await bot.reply_to(message, "✅ تم الدخول\n/takleesh\n/tasteer")
+    elif result == "password_needed":
+        user_steps[user_id] = {"step": "waiting_password"}
+        await bot.reply_to(message, "🔐 أرسل كلمة المرور:")
+    else:
+        await bot.reply_to(message, "❌ كود خطأ")
+        del user_steps[user_id]
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
+async def handle_password(message):
+    user_id = message.from_user.id
+    password = message.text.strip()
+    result = await verify_password_telethon(user_id, password)
+    if result is True:
+        del user_steps[user_id]
+        await bot.reply_to(message, "✅ تم الدخول")
+    else:
+        await bot.reply_to(message, "❌ كلمة مرور خطأ")
+        del user_steps[user_id]
+
+@bot.message_handler(commands=['takleesh'])
+async def takleesh(message):
+    user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        return
+    if not is_verified(user_id):
+        await bot.reply_to(message, "❌ سجل دخول: /login")
+        return
+    if user_id in active_spams:
+        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
+        return
+    user_steps[user_id] = {"step": "takleesh_target"}
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف (@username أو ID):")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
+async def takleesh_target(message):
+    user_id = message.from_user.id
+    target = message.text.strip()
+    user_steps[user_id] = {"step": "takleesh_count", "target": target}
+    await bot.reply_to(message, "🔢 كم رسالة تريد إرسالها؟ (التطفية التلقائية)")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
+async def takleesh_count(message):
+    user_id = message.from_user.id
+    try:
+        count = int(message.text.strip())
+        if count < 1:
+            raise ValueError
+    except:
+        await bot.reply_to(message, "❌ عدد غير صالح")
+        del user_steps[user_id]
+        return
+    target = user_steps[user_id]["target"]
+    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة...")
+    asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
+    del user_steps[user_id]
+
+@bot.message_handler(commands=['tasteer'])
+async def tasteer(message):
+    user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        return
+    if not is_verified(user_id):
+        await bot.reply_to(message, "❌ سجل دخول: /login")
+        return
+    if user_id in active_spams:
+        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
+        return
+    user_steps[user_id] = {"step": "tasteer_target"}
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف (@username أو ID):")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
+async def tasteer_target(message):
+    user_id = message.from_user.id
+    target = message.text.strip()
+    user_steps[user_id] = {"step": "tasteer_delay", "target": target}
+    await bot.reply_to(message, "⏱️ السرعة بين كل سطر (بالثواني):\nمثال: 3")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_delay")
+async def tasteer_delay(message):
+    user_id = message.from_user.id
+    try:
+        delay = float(message.text.strip())
+        if delay < 0.5:
+            raise ValueError
+    except:
+        await bot.reply_to(message, "❌ سرعة غير صالحة (أقل قيمة 0.5 ثانية)")
+        del user_steps[user_id]
+        return
+    target = user_steps[user_id]["target"]
+    await bot.reply_to(message, f"🚀 سيتم إرسال 3 أسطر بفاصل {delay} ثانية")
+    asyncio.create_task(send_tasteer_messages(user_id, target, delay, message.chat.id))
+    del user_steps[user_id]
+
+@bot.message_handler(commands=['stop'])
+async def stop(message):
+    user_id = message.from_user.id
+    if user_id in active_spams:
+        active_spams[user_id]["stop"] = True
+        await bot.reply_to(message, "🛑 جاري إيقاف العملية...")
+    else:
+        await bot.reply_to(message, "⚠️ لا توجد عملية نشطة")
+
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return "Shadow Bot is running!"
+
+def run_flask():
+    port = int(os.environ.get('PORT', 8080))
+    flask_app.run(host='0.0.0.0', port=port)
+
+async def main():
+    print("🔥 SHADOW BOT is running...")
+    print("✅ البوت جاهز مع كليشات قوية ومدمجة")
+    threading.Thread(target=run_flask, daemon=True).start()
+    await bot.polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())    c = conn.cursor()
+    c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        expiry = datetime.fromisoformat(row[0])
+        if datetime.now() < expiry:
+            return True
+        else:
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+    return False
+
+def add_subscription(user_id, duration_hours):
+    user_id = str(user_id)
+    expiry = datetime.now() + timedelta(hours=duration_hours)
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT OR REPLACE INTO subscriptions (user_id, expiry) VALUES (?, ?)", (user_id, expiry.isoformat()))
+    conn.commit()
+    conn.close()
+
+def get_subscription_time(user_id):
+    user_id = str(user_id)
+    if user_id == str(OWNER_ID):
+        return "دائم (الأونر)"
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        expiry = datetime.fromisoformat(row[0])
+        remaining = expiry - datetime.now()
+        hours = int(remaining.total_seconds() // 3600)
         if hours > 0:
             return f"{hours} ساعة متبقية"
     return "غير مشترك"
