@@ -219,6 +219,19 @@ ENDING_STRONG = [
 ]
 
 # ==================================================
+# =============== القسم العاشر: كلمات إضافية قوية جديدة ===============
+# ==================================================
+
+NEW_STRONG_WORDS = [
+    "يا ابن الكلب الأجرب", "يا ابن القحبة المنتنة", "يا شرموطة شارع", "يا ديوث الحارة", "يا خنيث العائلة",
+    "يا منيوك الزبالة", "يا جرار القمامة", "يا فاشل الدرجة الأولى", "يا تافه المستوى", "يا غبي بامتياز",
+    "يا جاهل مركب", "يا متخلف وراثياً", "يا ظلامي العقل", "يا ارعن الطباع", "يا جبان العصر",
+    "يا خواف المشهور", "يا نعامة الصحراء", "يا فأر المجاري", "يا صرصور الحمام", "يا ذبابة المطبخ",
+    "علقة بنت علقة", "برغوث بنت برغوث", "قملة بنت قملة", "دودة بنت دودة", "عفنة بنت عفنة",
+    "زبالة بنت زبالة", "قمامة بنت قمامة", "وسخة بنت وسخة", "نتانة بنت نتانة", "مقرف بنت مقرف"
+]
+
+# ==================================================
 # =============== دوال التوليد ===============
 # ==================================================
 
@@ -245,6 +258,9 @@ def generate_millions_takleesh():
         parts.append(random.choice(MISC_STRONG))
         parts.append(random.choice(ENDING_STRONG))
     
+    if random.random() > 0.8:
+        parts.append(random.choice(NEW_STRONG_WORDS))
+    
     return " ".join(parts)
 
 def generate_millions_tasteer():
@@ -260,12 +276,9 @@ def generate_millions_tasteer():
         f"{random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)}",
         f"{random.choice(EXTRA_STRONG_WORDS)} {random.choice(TASTEER_STRONG)} {random.choice(ENDING_STRONG)}",
         f"{random.choice(MISC_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(INSULTS_POWER)}",
+        f"{random.choice(NEW_STRONG_WORDS)} {random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
     ]
     return random.choice(patterns)
-
-# ==================================================
-# =============== بوت TNT?¿ ===============
-# ==================================================
 
 bot = AsyncTeleBot(BOT_TOKEN)
 
@@ -372,36 +385,49 @@ async def send_tasteer_messages(user_id, target, lines, delay, chat_id):
         del active_spams[user_id]
 
 # ==================================================
-# =============== أوامر البوت ===============
+# =============== أوامر البوت (ترحيب جميل) ===============
 # ==================================================
 
 @bot.message_handler(commands=['start'])
 async def start(message):
-    status = get_subscription_time(message.from_user.id)
-    await bot.reply_to(message, f"""
-🔥 TNT?¿ فشار بوت الاحترافي 🔥
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🤖 المبرمج: الداهية ايليا الملائكة
-👑 الاونر: @Dwojj
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📊 حالة الاشتراك: {status}
-
-⚡ الأوامر المتاحة:
-• /login - تسجيل الدخول بحسابك
-• /takleesh - بدء التكليش (ملايين الكليشات)
-• /tasteer - بدء التسطير (ملايين الكلمات)
-• /stop - إيقاف العملية
-• /subscribe - الاشتراك بالبوت
-• /myplan - معرفة باقي اشتراكك
-• /gift - للأونر فقط
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💪 مئات الملايين من الكليشات المختلفة
-💪 مئات الملايين من كلمات التسطير
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-""")
+    user_id = message.from_user.id
+    status = get_subscription_time(user_id)
+    first_name = message.from_user.first_name or "صديقي"
+    
+    welcome_text = f"""
+╔════════════════════════════════════╗
+║     🌟 TNT?¿ SHADOW BOT 🌟        ║
+╠════════════════════════════════════╣
+║                                    ║
+║   ✨ اهلاً بك يا {first_name} ✨     ║
+║                                    ║
+║   ████████░░░░░░░░░░              ║
+║   البوّاب اللي يفتح لك أبواب       ║
+║   العيور والفضائح بكل احترافية     ║
+║                                    ║
+╠════════════════════════════════════╣
+║  📊 حالة اشتراكك: {status:<10}   ║
+╠════════════════════════════════════╣
+║  ⚡ الأوامر المتاحة:               ║
+║                                    ║
+║  🔐 /login  - تسجيل الدخول         ║
+║  💣 /takleesh - تكليش (ملايين)     ║
+║  🔪 /tasteer - تسطير (ملايين)      ║
+║  🛑 /stop    - إيقاف العملية       ║
+║  ⭐ /subscribe - اشتراك بالنجوم    ║
+║  📋 /myplan  - متبقي الاشتراك      ║
+║  🎁 /gift    - للأونر فقط          ║
+║                                    ║
+╠════════════════════════════════════╣
+║  🤖 المبرمج: الداهية ايليا الملائكة ║
+║  👑 الاونر: @Dwojj                 ║
+╠════════════════════════════════════╣
+║  💪 مئات الملايين من الكليشات       ║
+║  💪 كلمات تسطير قوية جداً           ║
+║  💪 تحديثات مستمرة                  ║
+╚════════════════════════════════════╝
+"""
+    await bot.reply_to(message, welcome_text, parse_mode="HTML")
 
 @bot.message_handler(commands=['subscribe'])
 async def subscribe(message):
@@ -561,7 +587,7 @@ async def takleesh_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "takleesh_count", "target": target}
-    await bot.reply_to(message, "🔢 كم رسالة تريد إرسالها؟")
+    await bot.reply_to(message, "🔢 كم رسالة تريد إرسالها؟ (مثال: 10, 50, 100, 500)")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
 async def takleesh_count(message):
@@ -575,7 +601,7 @@ async def takleesh_count(message):
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة")
+    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة...")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -599,7 +625,7 @@ async def tasteer_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "tasteer_lines", "target": target}
-    await bot.reply_to(message, "🔢 كم سطر تريد إرسالها؟")
+    await bot.reply_to(message, "🔢 كم سطر تريد إرسالها؟ (مثال: 5, 10, 20, 50)\n⚠️ كل سطر = كليشة كاملة")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_lines")
 async def tasteer_lines(message):
@@ -613,7 +639,7 @@ async def tasteer_lines(message):
         del user_steps[user_id]
         return
     user_steps[user_id] = {"step": "tasteer_delay", "target": user_steps[user_id]["target"], "lines": lines}
-    await bot.reply_to(message, "⏱️ السرعة بين كل سطر (بالثواني):")
+    await bot.reply_to(message, "⏱️ السرعة بين كل سطر (بالثواني):\nمثال: 2")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_delay")
 async def tasteer_delay(message):
@@ -654,6 +680,8 @@ def run_flask():
 async def main():
     print("🔥 TNT?¿ SHADOW BOT with Infinite Words is running...")
     print("✅ مئات الملايين من الكليشات والكلمات القوية")
+    print("✅ التكليف: يرسل أي عدد تختاره")
+    print("✅ التسطير: كل سطر = كليشة كاملة")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
 
