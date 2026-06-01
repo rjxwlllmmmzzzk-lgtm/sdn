@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice
 from flask import Flask
 
 API_ID = 30874435
@@ -199,21 +199,24 @@ async def send_tasteer_messages(user_id, target, delay, chat_id):
 async def start(message):
     user_id = message.from_user.id
     status = get_subscription_time(user_id)
-    await bot.reply_to(message, f"🔥 بوت فشار\nحالة الاشتراك: {status}\n/help للأوامر", parse_mode="HTML")
+    await bot.reply_to(message, f"""
+🔥 بوت فشار 🔥
 
-@bot.message_handler(commands=['help'])
-async def help_cmd(message):
-    await bot.reply_to(message, """
-<b>⚡ أوامر البوت:</b>
+━━━━━━━━━━━━━━━━
+🤖 المبرمج: الداهية ايليا الملائكة
+👑 الاونر: @Dwojj
+━━━━━━━━━━━━━━━━
 
+📊 حالتك: {status}
+
+⚡ الأوامر:
 /login - تسجيل الدخول
-/takleesh - بدء التكليش
-/tasteer - بدء التسطير
-/stop - إيقاف العملية
-/subscribe - الاشتراك بالنجوم
-/myplan - معرفة باقي الاشتراك
-/gift - للأونر فقط
-""", parse_mode="HTML")
+/takleesh - التكليش
+/tasteer - التسطير
+/stop - إيقاف
+/subscribe - اشتراك
+/myplan - باقي الاشتراك
+""")
 
 @bot.message_handler(commands=['subscribe'])
 async def subscribe(message):
@@ -229,22 +232,30 @@ async def subscribe(message):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("sub_"))
 async def handle_subscription(call):
     plans = {
-        "sub_hour": {"stars": 15, "hours": 1, "name": "ساعة"},
-        "sub_day": {"stars": 50, "hours": 24, "name": "يوم"},
-        "sub_week": {"stars": 150, "hours": 168, "name": "أسبوع"},
-        "sub_month": {"stars": 250, "hours": 720, "name": "شهر"}
+        "sub_hour": {"stars": 15, "hours": 1, "name": "ساعة", "price": 15},
+        "sub_day": {"stars": 50, "hours": 24, "name": "يوم", "price": 50},
+        "sub_week": {"stars": 150, "hours": 168, "name": "أسبوع", "price": 150},
+        "sub_month": {"stars": 250, "hours": 720, "name": "شهر", "price": 250}
     }
     plan = plans.get(call.data)
     if plan:
         await bot.answer_callback_query(call.id)
+        
+        prices = [LabeledPrice(label=f"⭐ {plan['name']}", amount=plan['price'])]
+        
         await bot.send_invoice(
             chat_id=call.message.chat.id,
-            title=f"اشتراك {plan['name']}",
-            description=f"تفعيل اشتراك {plan['name']}",
-            payload=f"sub_{plan['name']}",
+            title=f"اشتراك {plan['name']} - فشار بوت",
+            description=f"تفعيل اشتراك {plan['name']} في بوت فشار\n\n⭐ السعر: {plan['stars']} نجمة\n⏰ المدة: {plan['name']}",
+            invoice_payload=f"sub_{plan['name']}_{plan['hours']}",
             provider_token="",
             currency="XTR",
-            prices=[{"label": f"⭐ {plan['name']}", "amount": plan['stars']}]
+            prices=prices,
+            need_name=False,
+            need_phone_number=False,
+            need_email=False,
+            need_shipping_address=False,
+            is_flexible=False
         )
 
 @bot.pre_checkout_query_handler(func=lambda query: True)
@@ -255,18 +266,26 @@ async def checkout(pre_checkout_query):
 async def successful_payment(message):
     user_id = message.from_user.id
     payload = message.successful_payment.invoice_payload
+    total_amount = message.successful_payment.total_amount
+    
     if "ساعة" in payload:
-        add_subscription(user_id, 1)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة ساعة")
+        hours = 1
+        name = "ساعة"
     elif "يوم" in payload:
-        add_subscription(user_id, 24)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة يوم")
+        hours = 24
+        name = "يوم"
     elif "أسبوع" in payload:
-        add_subscription(user_id, 168)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة أسبوع")
+        hours = 168
+        name = "أسبوع"
     elif "شهر" in payload:
-        add_subscription(user_id, 720)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة شهر")
+        hours = 720
+        name = "شهر"
+    else:
+        await bot.reply_to(message, "❌ حدث خطأ في الدفع")
+        return
+    
+    add_subscription(user_id, hours)
+    await bot.reply_to(message, f"✅ تم تفعيل اشتراكك لمدة {name} بنجاح!\nشكراً لدعمك 💫")
 
 @bot.message_handler(commands=['myplan'])
 async def myplan(message):
@@ -275,23 +294,23 @@ async def myplan(message):
 @bot.message_handler(commands=['gift'])
 async def gift_subscription(message):
     if message.from_user.id != OWNER_ID:
-        await bot.reply_to(message, "❌ للأونر فقط")
+        await bot.reply_to(message, "❌ للأونر فقط @Dwojj")
         return
     args = message.text.split()
     if len(args) != 3:
-        await bot.reply_to(message, "❌ /gift [ايدي] [ساعات]\nمثال: /gift 8619852744 720")
+        await bot.reply_to(message, "❌ استخدم: /gift [ايدي] [ساعات]\nمثال: /gift 8619852744 720")
         return
     try:
         target_id = int(args[1])
         hours = int(args[2])
         add_subscription(target_id, hours)
-        await bot.reply_to(message, f"✅ تم تفعيل اشتراك {target_id} لمدة {hours} ساعة")
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراك للمستخدم {target_id} لمدة {hours} ساعة")
         try:
-            await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {hours} ساعة")
+            await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {hours} ساعة بواسطة الأونر @Dwojj")
         except:
             pass
     except:
-        await bot.reply_to(message, "❌ خطأ")
+        await bot.reply_to(message, "❌ تأكد من كتابة ايدي صحيح وعدد ساعات صحيح")
 
 @bot.message_handler(commands=['login'])
 async def login(message):
