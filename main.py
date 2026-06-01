@@ -14,9 +14,9 @@ API_HASH = "93e20ced9ed0fa7e7e903900c11633d6"
 BOT_TOKEN = "8817608659:AAF8O-I58x-khZLq4AzY-OWTyfgPIcNEo1M"
 
 # =============== قاعدة بيانات ===============
-user_sessions = {}  # {user_id: {"client": client, "step": str, "phone": str}}
-active_spams = {}   # {user_id: {"stop": bool}}
-user_steps = {}     # {user_id: {"step": str, "target": str, "count": int, "delay": float}}
+user_sessions = {}
+active_spams = {}
+user_steps = {}
 
 # =============== كلمات التكليش ===============
 TAKLEESH_WORDS = [
@@ -28,7 +28,6 @@ TAKLEESH_WORDS = [
     "العب بوبجي بكسمك", "اتنايج وي اهلك"
 ]
 
-# =============== كلمات التسطير ===============
 TASTEER_WORDS = [
     "القحاب", "يا اخو الشرموطه", "يا ديوث", "يا خنيث", "الخنيث", "يا ابن الديوث",
     "يا ابن الزب", "اصمل بنيك", "عار امك", "يا مخنث", "يا ابن الكس", "يا حمار",
@@ -37,18 +36,15 @@ TASTEER_WORDS = [
 
 bot = AsyncTeleBot(BOT_TOKEN)
 
-# =============== دوال Pyrogram ===============
+# =============== دوال Pyrogram المصححة ===============
 async def send_code_pyro(user_id, phone):
     """إرسال كود التفعيل عبر Pyrogram"""
     try:
-        # إنشاء عميل جديد
         client = Client(f"sessions/user_{user_id}", API_ID, API_HASH, in_memory=True)
         await client.connect()
         
-        # إرسال طلب الكود
         sent_code = await client.send_code(phone)
         
-        # حفظ بيانات الجلسة
         user_sessions[user_id] = {
             "client": client,
             "phone": phone,
@@ -60,16 +56,18 @@ async def send_code_pyro(user_id, phone):
         return str(e)
 
 async def verify_code_pyro(user_id, code):
-    """التحقق من الكود"""
+    """التحقق من الكود - نسخة مصححة"""
     data = user_sessions.get(user_id)
     if not data or data.get("step") != "waiting_code":
         return False
     
     client = data["client"]
     phone = data["phone"]
+    phone_code_hash = data["phone_code_hash"]
     
     try:
-        await client.sign_in(phone, code, phone_code_hash=data["phone_code_hash"])
+        # الطريقة الصحيحة لـ sign_in
+        await client.sign_in(phone, code=code, phone_code_hash=phone_code_hash)
         user_sessions[user_id]["step"] = "ready"
         return True
     except SessionPasswordNeeded:
@@ -100,7 +98,6 @@ def get_client(user_id):
 
 # =============== دوال الإرسال ===============
 async def send_takleesh_messages(user_id, target, count, chat_id):
-    """إرسال كلايش من حساب المستخدم"""
     if user_id in active_spams:
         active_spams[user_id]["stop"] = False
     else:
@@ -130,7 +127,6 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
         del active_spams[user_id]
 
 async def send_tasteer_messages(user_id, target, delay, chat_id):
-    """إرسال تسطير من حساب المستخدم"""
     if user_id in active_spams:
         active_spams[user_id]["stop"] = False
     else:
@@ -194,7 +190,7 @@ async def handle_phone(message):
         user_steps[user_id] = {"step": "waiting_code"}
         await bot.reply_to(message, "✅ تم إرسال الكود إلى تطبيق تليجرام الخاص بك\nأدخل الكود (بدون مسافات):")
     else:
-        await bot.reply_to(message, f"❌ فشل إرسال الكود: {result}\nتأكد من أن الرقم صحيح ومرتبط بحساب تليجرام")
+        await bot.reply_to(message, f"❌ فشل إرسال الكود: {result}")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_code")
@@ -205,12 +201,12 @@ async def handle_code(message):
     result = await verify_code_pyro(user_id, code)
     if result is True:
         del user_steps[user_id]
-        await bot.reply_to(message, "✅ تم تسجيل الدخول بنجاح!\nالآن يمكنك استخدام:\n/takleesh - للتكليش\n/tasteer - للتسطير\n/stop - للإيقاف")
+        await bot.reply_to(message, "✅ تم تسجيل الدخول بنجاح!\n/takleesh - تكليش\n/tasteer - تسطير")
     elif result == "password_needed":
         user_steps[user_id] = {"step": "waiting_password"}
         await bot.reply_to(message, "🔐 حسابك مفعل بخطوتين\nأرسل كلمة المرور:")
     else:
-        await bot.reply_to(message, f"❌ كود غير صحيح: {result}\nاستخدم /login للمحاولة مجدداً")
+        await bot.reply_to(message, f"❌ كود غير صحيح: {result}")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
@@ -221,7 +217,7 @@ async def handle_password(message):
     result = await verify_password_pyro(user_id, password)
     if result is True:
         del user_steps[user_id]
-        await bot.reply_to(message, "✅ تم تسجيل الدخول بنجاح!\n/takleesh - تكليش\n/tasteer - تسطير")
+        await bot.reply_to(message, "✅ تم تسجيل الدخول بنجاح!")
     else:
         await bot.reply_to(message, f"❌ كلمة مرور خاطئة: {result}")
         del user_steps[user_id]
@@ -231,38 +227,36 @@ async def takleesh(message):
     user_id = message.from_user.id
     
     if not is_verified(user_id):
-        await bot.reply_to(message, "❌ يجب تسجيل الدخول أولاً. استخدم /login")
+        await bot.reply_to(message, "❌ سجل دخول: /login")
         return
     
     if user_id in active_spams:
-        await bot.reply_to(message, "⚠️ يوجد عملية نشطة. استخدم /stop أولاً")
+        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     
     user_steps[user_id] = {"step": "takleesh_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستخدم المستهدف:\n@username أو ID")
+    await bot.reply_to(message, "🎯 أرسل معرف المستخدم:")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
 async def takleesh_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "takleesh_count", "target": target}
-    await bot.reply_to(message, "🔢 كم رسالة تريد إرسالها؟ (التطفية التلقائية)")
+    await bot.reply_to(message, "🔢 كم رسالة؟")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
 async def takleesh_count(message):
     user_id = message.from_user.id
     try:
         count = int(message.text.strip())
-        if count < 1:
-            raise ValueError
+        if count < 1: raise ValueError
     except:
         await bot.reply_to(message, "❌ عدد غير صالح")
         del user_steps[user_id]
         return
     
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة إلى {target}...")
-    
+    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -271,57 +265,54 @@ async def tasteer(message):
     user_id = message.from_user.id
     
     if not is_verified(user_id):
-        await bot.reply_to(message, "❌ يجب تسجيل الدخول أولاً. استخدم /login")
+        await bot.reply_to(message, "❌ سجل دخول: /login")
         return
     
     if user_id in active_spams:
-        await bot.reply_to(message, "⚠️ يوجد عملية نشطة. استخدم /stop أولاً")
+        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     
     user_steps[user_id] = {"step": "tasteer_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستخدم المستهدف")
+    await bot.reply_to(message, "🎯 أرسل معرف المستخدم:")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
 async def tasteer_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "tasteer_delay", "target": target}
-    await bot.reply_to(message, "⏱️ السرعة بين كل سطر (بالثواني):\nمثال: 3")
+    await bot.reply_to(message, "⏱️ السرعة (ثانية):")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_delay")
 async def tasteer_delay(message):
     user_id = message.from_user.id
     try:
         delay = float(message.text.strip())
-        if delay < 0.5:
-            raise ValueError
+        if delay < 0.5: raise ValueError
     except:
-        await bot.reply_to(message, "❌ سرعة غير صالحة (أقل قيمة 0.5 ثانية)")
+        await bot.reply_to(message, "❌ سرعة غير صالحة")
         del user_steps[user_id]
         return
     
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"🚀 سيتم إرسال 3 أسطر إلى {target} بفاصل {delay} ثانية")
-    
+    await bot.reply_to(message, f"🚀 بدء إرسال 3 أسطر")
     asyncio.create_task(send_tasteer_messages(user_id, target, delay, message.chat.id))
     del user_steps[user_id]
 
 @bot.message_handler(commands=['stop'])
 async def stop(message):
     user_id = message.from_user.id
-    
     if user_id in active_spams:
         active_spams[user_id]["stop"] = True
-        await bot.reply_to(message, "🛑 جاري إيقاف العملية...")
+        await bot.reply_to(message, "🛑 جاري الإيقاف")
     else:
-        await bot.reply_to(message, "⚠️ لا توجد عملية نشطة لإيقافها")
+        await bot.reply_to(message, "⚠️ ما فيه عملية")
 
-# =============== سيرفر HTTP لـ Railway ===============
+# =============== سيرفر HTTP ===============
 flask_app = Flask(__name__)
 
 @flask_app.route('/')
 def home():
-    return "Shadow Bot is running on Railway!"
+    return "Shadow Bot is running!"
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
@@ -330,12 +321,7 @@ def run_flask():
 # =============== تشغيل البوت ===============
 async def main():
     print("🔥 SHADOW BOT with Pyrogram is running...")
-    print("✅ المستخدم يسجل دخول ويستلم كود على تليجرام نفسه")
-    
-    # تشغيل سيرفر Flask في خيط منفصل
     threading.Thread(target=run_flask, daemon=True).start()
-    
-    # تشغيل البوت
     await bot.polling()
 
 if __name__ == "__main__":
