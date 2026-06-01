@@ -81,6 +81,447 @@ def get_subscription_time(user_id):
     return "غير مشترك"
 
 init_db()
+add_subscription(OWNER_ID, 87600)
+
+# =============== كلمات التكليش ===============
+TAKLEESH_WORDS = [
+    "لحلكك الهالبك طيزمك", "اشيلك بعيري", "عبالك اعوفك؟", "انيجمك علصدرك", "ابن الزانيه",
+    "مصمص عيورتي", "اهف اختك بطرف عيري", "اربطك بقياطين قندرتي", "اشيل ربك واركعه بلكاع",
+    "اطحن ضلوعك", "اكهرب طيزك", "احط قضيبي بكس امك", "اقتحم نسلك", "اخدر امك",
+    "انيج امك الكحبه", "ربك اسمطه", "اعبد زبي", "المخنث", "اطشر صريمك", "افلشك تفليش",
+    "اذب تيزاب بكسمك", "انيج رب ربك", "افترس طيزك"
+]
+
+TASTEER_WORDS = [
+    "ابن العاهره", "يا ابن القحبه", "يا ابن الدعاره", "كسم امك", "يا ديوث", "يا جرار",
+    "يا فحل اختك", "يا خنيث", "يا ابن الساقطه", "يا فحل خواتك", "يا ابن المتناكه",
+    "يا شرمطه", "يا عاهر", "يا خول", "يا قواد"
+]
+
+bot = AsyncTeleBot(BOT_TOKEN)
+
+async def send_code_telethon(user_id, phone):
+    try:
+        client = TelegramClient(f":memory:", API_ID, API_HASH)
+        await client.connect()
+        if not await client.is_user_authorized():
+            await client.send_code_request(phone)
+            user_sessions[user_id] = {
+                "client": client,
+                "phone": phone,
+                "step": "waiting_code"
+            }
+            return True
+        else:
+            user_sessions[user_id] = {
+                "client": client,
+                "phone": phone,
+                "step": "ready"
+            }
+            return True
+    except Exception as e:
+        return str(e)
+
+async def verify_code_telethon(user_id, code):
+    data = user_sessions.get(user_id)
+    if not data or data.get("step") != "waiting_code":
+        return False
+    client = data["client"]
+    phone = data["phone"]
+    try:
+        await client.sign_in(phone, code=code)
+        user_sessions[user_id]["step"] = "ready"
+        return True
+    except SessionPasswordNeededError:
+        user_sessions[user_id]["step"] = "waiting_password"
+        return "password_needed"
+    except Exception as e:
+        return str(e)
+
+async def verify_password_telethon(user_id, password):
+    data = user_sessions.get(user_id)
+    if not data or data.get("step") != "waiting_password":
+        return False
+    client = data["client"]
+    try:
+        await client.sign_in(password=password)
+        user_sessions[user_id]["step"] = "ready"
+        return True
+    except Exception as e:
+        return str(e)
+
+def is_verified(user_id):
+    return user_id in user_sessions and user_sessions[user_id].get("step") == "ready"
+
+def get_client(user_id):
+    return user_sessions.get(user_id, {}).get("client")
+
+async def send_takleesh_messages(user_id, target, count, chat_id):
+    if not is_subscribed(user_id):
+        await bot.send_message(chat_id, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe")
+        return
+    if user_id in active_spams:
+        active_spams[user_id]["stop"] = False
+    else:
+        active_spams[user_id] = {"stop": False}
+    client = get_client(user_id)
+    if not client:
+        await bot.send_message(chat_id, "❌ خطأ في الجلسة")
+        return
+    for i in range(count):
+        if active_spams[user_id]["stop"]:
+            await bot.send_message(chat_id, "🛑 تم الإيقاف")
+            break
+        word = random.choice(TAKLEESH_WORDS)
+        try:
+            await client.send_message(target, word)
+        except Exception as e:
+            await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
+            break
+        await asyncio.sleep(1)
+    await bot.send_message(chat_id, f"✅ تم إرسال {count} كليشة")
+    if user_id in active_spams:
+        del active_spams[user_id]
+
+async def send_tasteer_messages(user_id, target, delay, chat_id):
+    if not is_subscribed(user_id):
+        await bot.send_message(chat_id, "❌ ليس لديك اشتراك نشط\nاستخدم /subscribe")
+        return
+    if user_id in active_spams:
+        active_spams[user_id]["stop"] = False
+    else:
+        active_spams[user_id] = {"stop": False}
+    client = get_client(user_id)
+    if not client:
+        await bot.send_message(chat_id, "❌ خطأ في الجلسة")
+        return
+    for i in range(3):
+        if active_spams[user_id]["stop"]:
+            await bot.send_message(chat_id, "🛑 تم الإيقاف")
+            break
+        word = random.choice(TASTEER_WORDS)
+        try:
+            await client.send_message(target, word)
+        except Exception as e:
+            await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
+            break
+        await asyncio.sleep(delay)
+    await bot.send_message(chat_id, "✅ تم الانتهاء")
+    if user_id in active_spams:
+        del active_spams[user_id]
+
+@bot.message_handler(commands=['start'])
+async def start(message):
+    user_id = message.from_user.id
+    status = get_subscription_time(user_id)
+    welcome_text = f"""
+<b>🔥 بوت فـشـار 🔥</b>
+
+━━━━━━━━━━━━━━━━━━━━
+<b>🤖 المبرمج:</b> <i>الداهية ايليا الملائكة</i>
+<b>👑 الاونر:</b> <i>@Dwojj</i>
+━━━━━━━━━━━━━━━━━━━━
+
+<b>📊 حالة الاشتراك:</b> {status}
+
+<b>⚡ الأوامر المتاحة:</b>
+• /login - تسجيل الدخول
+• /takleesh - التكليش
+• /tasteer - التسطير
+• /stop - إيقاف
+• /subscribe - الاشتراك
+• /myplan - باقي الاشتراك
+"""
+    await bot.reply_to(message, welcome_text, parse_mode="HTML")
+
+@bot.message_handler(commands=['subscribe'])
+async def subscribe(message):
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        InlineKeyboardButton("⭐ ساعة - 15 نجمة", callback_data="sub_hour"),
+        InlineKeyboardButton("⭐ يوم - 50 نجمة", callback_data="sub_day"),
+        InlineKeyboardButton("⭐ أسبوع - 150 نجمة", callback_data="sub_week"),
+        InlineKeyboardButton("⭐ شهر - 250 نجمة", callback_data="sub_month")
+    )
+    await bot.reply_to(message, "⭐ اختر مدة الاشتراك:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("sub_"))
+async def handle_subscription(call):
+    data = call.data
+    plans = {
+        "sub_hour": {"stars": 15, "hours": 1, "name": "ساعة"},
+        "sub_day": {"stars": 50, "hours": 24, "name": "يوم"},
+        "sub_week": {"stars": 150, "hours": 168, "name": "أسبوع"},
+        "sub_month": {"stars": 250, "hours": 720, "name": "شهر"}
+    }
+    if data in plans:
+        plan = plans[data]
+        await bot.answer_callback_query(call.id)
+        await bot.send_invoice(
+            chat_id=call.message.chat.id,
+            title=f"اشتراك {plan['name']} - فشار بوت",
+            description=f"تفعيل اشتراك {plan['name']} في بوت فشار",
+            payload=f"sub_{plan['name']}",
+            provider_token="",
+            currency="XTR",
+            prices=[{"label": f"⭐ {plan['name']}", "amount": plan['stars']}]
+        )
+
+@bot.pre_checkout_query_handler(func=lambda query: True)
+async def checkout(pre_checkout_query):
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
+@bot.message_handler(content_types=['successful_payment'])
+async def successful_payment(message):
+    user_id = message.from_user.id
+    payload = message.successful_payment.invoice_payload
+    if "ساعة" in payload:
+        add_subscription(user_id, 1)
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة ساعة")
+    elif "يوم" in payload:
+        add_subscription(user_id, 24)
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة يوم")
+    elif "أسبوع" in payload:
+        add_subscription(user_id, 168)
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة أسبوع")
+    elif "شهر" in payload:
+        add_subscription(user_id, 720)
+        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة شهر")
+
+@bot.message_handler(commands=['myplan'])
+async def myplan(message):
+    user_id = message.from_user.id
+    status = get_subscription_time(user_id)
+    await bot.reply_to(message, f"📊 حالتك: {status}")
+
+@bot.message_handler(commands=['gift'])
+async def gift_subscription(message):
+    user_id = message.from_user.id
+    if user_id != OWNER_ID:
+        await bot.reply_to(message, "❌ للأونر فقط")
+        return
+    args = message.text.split()
+    if len(args) != 3:
+        await bot.reply_to(message, "❌ /gift [ايدي] [ساعات]\nمثال: /gift 8619852744 720")
+        return
+    try:
+        target_id = int(args[1])
+        hours = int(args[2])
+        add_subscription(target_id, hours)
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراك {target_id} لمدة {hours} ساعة")
+        try:
+            await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {hours} ساعة بواسطة الأونر")
+        except:
+            pass
+    except:
+        await bot.reply_to(message, "❌ خطأ في البيانات")
+
+@bot.message_handler(commands=['login'])
+async def login(message):
+    user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        return
+    if is_verified(user_id):
+        await bot.reply_to(message, "✅ مسجل بالفعل")
+        return
+    user_steps[user_id] = {"step": "waiting_phone"}
+    await bot.reply_to(message, "📱 أرسل رقمك مع +\nمثال: +966512345678")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_phone")
+async def handle_phone(message):
+    user_id = message.from_user.id
+    phone = message.text.strip()
+    if not phone.startswith('+'):
+        await bot.reply_to(message, "❌ الرقم يبدأ بـ +")
+        return
+    await bot.reply_to(message, "⏳ جاري إرسال الكود...")
+    result = await send_code_telethon(user_id, phone)
+    if result is True:
+        user_steps[user_id] = {"step": "waiting_code"}
+        await bot.reply_to(message, "✅ تم إرسال الكود\nأدخل الكود بمسافات:\nمثال: 1 2 3 4 5")
+    else:
+        await bot.reply_to(message, f"❌ فشل: {result}")
+        del user_steps[user_id]
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_code")
+async def handle_code(message):
+    user_id = message.from_user.id
+    code = message.text.strip().replace(" ", "")
+    if not code.isdigit():
+        await bot.reply_to(message, "❌ الكود أرقام فقط")
+        return
+    result = await verify_code_telethon(user_id, code)
+    if result is True:
+        del user_steps[user_id]
+        await bot.reply_to(message, "✅ تم الدخول\n/takleesh\n/tasteer")
+    elif result == "password_needed":
+        user_steps[user_id] = {"step": "waiting_password"}
+        await bot.reply_to(message, "🔐 أرسل كلمة المرور:")
+    else:
+        await bot.reply_to(message, "❌ كود خطأ")
+        del user_steps[user_id]
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
+async def handle_password(message):
+    user_id = message.from_user.id
+    password = message.text.strip()
+    result = await verify_password_telethon(user_id, password)
+    if result is True:
+        del user_steps[user_id]
+        await bot.reply_to(message, "✅ تم الدخول")
+    else:
+        await bot.reply_to(message, "❌ كلمة مرور خطأ")
+        del user_steps[user_id]
+
+@bot.message_handler(commands=['takleesh'])
+async def takleesh(message):
+    user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        return
+    if not is_verified(user_id):
+        await bot.reply_to(message, "❌ سجل دخول: /login")
+        return
+    if user_id in active_spams:
+        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
+        return
+    user_steps[user_id] = {"step": "takleesh_target"}
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
+async def takleesh_target(message):
+    user_id = message.from_user.id
+    target = message.text.strip()
+    user_steps[user_id] = {"step": "takleesh_count", "target": target}
+    await bot.reply_to(message, "🔢 كم رسالة؟")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
+async def takleesh_count(message):
+    user_id = message.from_user.id
+    try:
+        count = int(message.text.strip())
+        if count < 1:
+            raise ValueError
+    except:
+        await bot.reply_to(message, "❌ عدد غير صالح")
+        del user_steps[user_id]
+        return
+    target = user_steps[user_id]["target"]
+    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة")
+    asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
+    del user_steps[user_id]
+
+@bot.message_handler(commands=['tasteer'])
+async def tasteer(message):
+    user_id = message.from_user.id
+    if not is_subscribed(user_id):
+        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        return
+    if not is_verified(user_id):
+        await bot.reply_to(message, "❌ سجل دخول: /login")
+        return
+    if user_id in active_spams:
+        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
+        return
+    user_steps[user_id] = {"step": "tasteer_target"}
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
+async def tasteer_target(message):
+    user_id = message.from_user.id
+    target = message.text.strip()
+    user_steps[user_id] = {"step": "tasteer_delay", "target": target}
+    await bot.reply_to(message, "⏱️ السرعة (ثانية):")
+
+@bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_delay")
+async def tasteer_delay(message):
+    user_id = message.from_user.id
+    try:
+        delay = float(message.text.strip())
+        if delay < 0.5:
+            raise ValueError
+    except:
+        await bot.reply_to(message, "❌ سرعة غير صالحة")
+        del user_steps[user_id]
+        return
+    target = user_steps[user_id]["target"]
+    await bot.reply_to(message, f"🚀 بدء إرسال 3 أسطر")
+    asyncio.create_task(send_tasteer_messages(user_id, target, delay, message.chat.id))
+    del user_steps[user_id]
+
+@bot.message_handler(commands=['stop'])
+async def stop(message):
+    user_id = message.from_user.id
+    if user_id in active_spams:
+        active_spams[user_id]["stop"] = True
+        await bot.reply_to(message, "🛑 جاري الإيقاف")
+    else:
+        await bot.reply_to(message, "⚠️ ما فيه عملية")
+
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return "Shadow Bot is running!"
+
+def run_flask():
+    port = int(os.environ.get('PORT', 8080))
+    flask_app.run(host='0.0.0.0', port=port)
+
+async def main():
+    print("🔥 SHADOW BOT is running...")
+    threading.Thread(target=run_flask, daemon=True).start()
+    await bot.polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())    if user_id == str(OWNER_ID):
+        return True
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        expiry = datetime.fromisoformat(row[0])
+        if datetime.now() < expiry:
+            return True
+        else:
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+    return False
+
+def add_subscription(user_id, duration_hours):
+    user_id = str(user_id)
+    expiry = datetime.now() + timedelta(hours=duration_hours)
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("INSERT OR REPLACE INTO subscriptions (user_id, expiry) VALUES (?, ?)",
+              (user_id, expiry.isoformat()))
+    conn.commit()
+    conn.close()
+
+def get_subscription_time(user_id):
+    user_id = str(user_id)
+    if user_id == str(OWNER_ID):
+        return "دائم (الأونر)"
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT expiry FROM subscriptions WHERE user_id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        expiry = datetime.fromisoformat(row[0])
+        remaining = expiry - datetime.now()
+        hours = int(remaining.total_seconds() // 3600)
+        if hours > 0:
+            return f"{hours} ساعة متبقية"
+    return "غير مشترك"
+
+init_db()
 
 # الأونر مشترك تلقائياً
 add_subscription(OWNER_ID, 87600)  # 10 سنوات
