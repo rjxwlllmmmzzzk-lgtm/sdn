@@ -349,35 +349,39 @@ async def send_tasteer_messages(user_id, target, lines, chat_id):
 @bot.message_handler(commands=['start'])
 async def start(message):
     status = get_subscription_time(message.from_user.id)
+    name = message.from_user.first_name or "صديقي"
     
     photo_url = "https://l.top4top.io/p_3804s3rqj0.jpg"
-    caption = f"""
-<b>🔥 TNT?¿ SHADOW BOT 🔥</b>
-
-<b>👤 المستخدم:</b> <code>{message.from_user.first_name}</code>
-<b>⭐ حالتك:</b> {status}
-
-<b>📋 الأوامر:</b>
-🔐 <code>/login</code> - تسجيل دخول
-💣 <code>/takleesh</code> - تكليش
-🔪 <code>/tasteer</code> - تسطير
-🛑 <code>/stop</code> - إيقاف
-⭐ <code>/subscribe</code> - اشتراك
-📋 <code>/myplan</code> - باقي الاشتراك
-
-<b>👑 المبرمج:</b> الداهية ايليا الملائكة
-<b>🤖 الاونر:</b> {OWNER_USERNAME}
-"""
+    caption = (
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>🔥 TNT SHADOW BOT 🔥</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n\n"
+        f"<b>✧ welcome {name}</b>\n"
+        f"<b>✧ الاشتراك : {status}</b>\n\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        "<b>⚡ الاوامر</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n\n"
+        "<b>▪ /login • تسجيل دخول</b>\n"
+        "<b>▪ /takleesh • تكليش</b>\n"
+        "<b>▪ /tasteer • تسطير</b>\n"
+        "<b>▪ /stop • ايقاف</b>\n"
+        "<b>▪ /subscribe • اشتراك</b>\n"
+        "<b>▪ /myplan • متبقي</b>\n\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
+        f"<b>👑 المطور : {OWNER_USERNAME}</b>\n"
+        "<b>━━━━━━━━━━━━━━━━━━━━</b>"
+    )
+    
     await bot.send_photo(message.chat.id, photo_url, caption=caption, parse_mode="HTML")
 
 @bot.message_handler(commands=['subscribe'])
 async def subscribe(message):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
-        InlineKeyboardButton("⭐ ساعة - 15 نجمة", callback_data="sub_hour"),
-        InlineKeyboardButton("⭐ يوم - 50 نجمة", callback_data="sub_day"),
-        InlineKeyboardButton("⭐ اسبوع - 150 نجمة", callback_data="sub_week"),
-        InlineKeyboardButton("⭐ شهر - 250 نجمة", callback_data="sub_month")
+        InlineKeyboardButton("⭐ ساعة - 15", callback_data="sub_hour"),
+        InlineKeyboardButton("⭐ يوم - 50", callback_data="sub_day"),
+        InlineKeyboardButton("⭐ اسبوع - 150", callback_data="sub_week"),
+        InlineKeyboardButton("⭐ شهر - 250", callback_data="sub_month")
     )
     await bot.reply_to(message, "⭐ اختر مدة الاشتراك:", reply_markup=markup)
 
@@ -521,14 +525,14 @@ async def takleesh(message):
         await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     user_steps[user_id] = {"step": "takleesh_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستهدف (@username أو ID):")
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
 async def takleesh_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "takleesh_count", "target": target}
-    await bot.reply_to(message, "🔢 كم رسالة؟ (مثال: 10, 50, 100)")
+    await bot.reply_to(message, "🔢 عدد الرسائل:")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
 async def takleesh_count(message):
@@ -542,7 +546,7 @@ async def takleesh_count(message):
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"⚡ بدء إرسال {count} كليشة (3 ثواني بين كل كليشة)")
+    await bot.reply_to(message, f"⚡ جاري ارسال {count} كليشة (3 ثواني)")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -559,14 +563,14 @@ async def tasteer(message):
         await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
         return
     user_steps[user_id] = {"step": "tasteer_target"}
-    await bot.reply_to(message, "🎯 أرسل معرف المستهدف (@username أو ID):")
+    await bot.reply_to(message, "🎯 أرسل معرف المستهدف:")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
 async def tasteer_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "tasteer_lines", "target": target}
-    await bot.reply_to(message, "🔢 كم سطر؟ (مثال: 5, 10, 20)")
+    await bot.reply_to(message, "🔢 عدد الاسطر:")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_lines")
 async def tasteer_lines(message):
@@ -580,7 +584,7 @@ async def tasteer_lines(message):
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"🚀 بدء إرسال {lines} سطر تسطير (3 ثواني بين كل سطر)")
+    await bot.reply_to(message, f"🚀 جاري ارسال {lines} سطر (3 ثواني)")
     asyncio.create_task(send_tasteer_messages(user_id, target, lines, message.chat.id))
     del user_steps[user_id]
 
@@ -589,7 +593,7 @@ async def stop(message):
     user_id = message.from_user.id
     if user_id in active_spams:
         active_spams[user_id]["stop"] = True
-        await bot.reply_to(message, "🛑 جاري الإيقاف")
+        await bot.reply_to(message, "🛑 تم الايقاف")
     else:
         await bot.reply_to(message, "⚠️ لا توجد عملية")
 
@@ -605,7 +609,6 @@ def run_flask():
 
 async def main():
     print("🔥 TNT?¿ SHADOW BOT is running...")
-    print("✅ جميع الكلمات والكليشات الأصلية موجودة")
     print("✅ 3 ثواني بين كل رسالة")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
