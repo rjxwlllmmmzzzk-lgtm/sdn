@@ -11,11 +11,11 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice
 from flask import Flask
 
-# =============== TOKENS & IDs (تم التحديث) ===============
+# =============== TOKENS & IDs (المحدثة) ===============
 API_ID = 30874435
 API_HASH = "cc3b98786456de26fe5e803910051cea"
-BOT_TOKEN = "8811228549:AAGsFA1_LhxrGg0MBb1fdN47tBj9q2VjK4E"  # ✅ تم التحديث
-OWNER_ID = 8619852744  # ✅ تم التحديث
+BOT_TOKEN = "8811228549:AAGsFA1_LhxrGg0MBb1fdN47tBj9q2VjK4E"  # ✅ التوكن الجديد
+OWNER_ID = 8619852744  # ✅ الأيدي الجديد
 OWNER_USERNAME = "@Dwojj"
 
 user_sessions = {}
@@ -24,7 +24,7 @@ user_steps = {}
 
 DB_PATH = "subscriptions.db"
 
-# =============== ملصقات مميزة فخمة جداً ===============
+# =============== ملصقات مميزة ===============
 STICKERS = {
     "welcome": "CAACAgQAAxkBAAEB9MJlhG0AAWwVhCwFJjIAASjC2SujAAEKAg",
     "success": "CAACAgQAAxkBAAEB9NNlhG1-sZxZqWJfSvRgTl1RqPqZAg",
@@ -159,50 +159,22 @@ def parse_duration(text):
 init_db()
 
 # =============== كلمات الهجوم ===============
-VERBS_POWER = [
-    "لحلكك", "اشيلك", "عبالك", "انيجمك", "مصمص", "اهف", "اربطك", "اطحن",
-]
-
-NOUNS_POWER = [
-    "الهالبك", "بعيري", "تيزمك", "علصدرك", "قضيبي", "زبي", "كسمك",
-]
-
-INSULTS_POWER = [
-    "يا ابن الكلب", "يا ابن الشرموطه", "يا ديوث", "يا خنيث",
-]
-
-VERBS_EXTRA = [
-    "كس امك", "كسمك", "انيك امك", "اطحن مخك",
-]
-
-SAUDI_STRONG = [
-    "يابنالقحبه", "شرموطه", "خنيث", "ديوث", "قحبه",
-]
-
-TASTEER_STRONG = [
-    "كس امك", "كسمك", "انيك امك", "اطحن مخك",
-]
+VERBS_POWER = ["لحلكك", "اشيلك", "عبالك", "انيجمك", "مصمص", "اهف", "اربطك", "اطحن"]
+NOUNS_POWER = ["الهالبك", "بعيري", "تيزمك", "علصدرك", "قضيبي", "زبي", "كسمك"]
+INSULTS_POWER = ["يا ابن الكلب", "يا ابن الشرموطه", "يا ديوث", "يا خنيث"]
+VERBS_EXTRA = ["كس امك", "كسمك", "انيك امك", "اطحن مخك"]
+SAUDI_STRONG = ["يابنالقحبه", "شرموطه", "خنيث", "ديوث", "قحبه"]
+TASTEER_STRONG = ["كس امك", "كسمك", "انيك امك", "اطحن مخك"]
 
 def generate_millions_takleesh():
-    parts = []
-    parts.append(random.choice(VERBS_POWER))
-    parts.append(random.choice(NOUNS_POWER))
-    parts.append(random.choice(INSULTS_POWER))
-    parts.append(random.choice(VERBS_EXTRA))
-    parts.append(random.choice(SAUDI_STRONG))
+    parts = [random.choice(VERBS_POWER), random.choice(NOUNS_POWER), random.choice(INSULTS_POWER), random.choice(VERBS_EXTRA), random.choice(SAUDI_STRONG)]
     return " ".join(parts)
 
 def generate_millions_tasteer():
-    patterns = [
-        f"{random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
-        f"{random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)}",
-        f"يا {random.choice(INSULTS_POWER)} يا {random.choice(SAUDI_STRONG)}",
-    ]
-    return random.choice(patterns)
+    return random.choice([f"{random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}", f"{random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)}"])
 
 bot = AsyncTeleBot(BOT_TOKEN)
 
-# =============== دوال تسجيل الدخول ===============
 async def send_code_telethon(user_id, phone):
     try:
         client = TelegramClient(":memory:", API_ID, API_HASH)
@@ -251,7 +223,6 @@ def is_verified(user_id):
 def get_client(user_id):
     return user_sessions.get(user_id, {}).get("client")
 
-# =============== دوال الإرسال ===============
 async def send_takleesh_messages(user_id, target, count, chat_id):
     if not is_subscribed(user_id):
         await send_fancy_message(chat_id, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
@@ -264,7 +235,6 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
     if not client:
         await send_fancy_message(chat_id, f"{EMOJI['error']} خطأ في الجلسة", "error")
         return
-    
     for i in range(count):
         if active_spams[user_id]["stop"]:
             await send_fancy_message(chat_id, f"{EMOJI['stop']} تم الإيقاف", "stop")
@@ -277,7 +247,6 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
             await send_fancy_message(chat_id, f"{EMOJI['error']} فشل: {str(e)}", "error")
             break
         await asyncio.sleep(3)
-    
     await send_fancy_message(chat_id, f"{EMOJI['success']} تم إرسال {count} كليشة", "success")
     if user_id in active_spams:
         del active_spams[user_id]
@@ -294,7 +263,6 @@ async def send_tasteer_messages(user_id, target, lines, chat_id):
     if not client:
         await send_fancy_message(chat_id, f"{EMOJI['error']} خطأ في الجلسة", "error")
         return
-    
     for i in range(lines):
         if active_spams[user_id]["stop"]:
             await send_fancy_message(chat_id, f"{EMOJI['stop']} تم الإيقاف", "stop")
@@ -307,7 +275,6 @@ async def send_tasteer_messages(user_id, target, lines, chat_id):
             await send_fancy_message(chat_id, f"{EMOJI['error']} فشل: {str(e)}", "error")
             break
         await asyncio.sleep(3)
-    
     await send_fancy_message(chat_id, f"{EMOJI['success']} تم إرسال {lines} سطر", "success")
     if user_id in active_spams:
         del active_spams[user_id]
@@ -318,44 +285,53 @@ async def start(message):
     status = get_subscription_time(message.from_user.id)
     name = message.from_user.first_name or "صديقي"
     
-    await bot.send_sticker(message.chat.id, STICKERS["welcome"])
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["welcome"])
+    except:
+        pass
     
     caption = f"""
-{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
-{EMOJI['fire']} <b>TNT SHADOW BOT</b> {EMOJI['fire']}
-{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+👑━━━━━━━━━━━━━━━━━━━━👑
+🔥 <b>TNT SHADOW BOT</b> 🔥
+👑━━━━━━━━━━━━━━━━━━━━👑
 
-{EMOJI['star']} <b>مرحباً {name}</b> {EMOJI['star']}
-{EMOJI['diamond']} <b>الاشتراك</b> : {status}
+⭐ <b>مرحباً {name}</b> ⭐
+💎 <b>الاشتراك</b> : {status}
 
-{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
-{EMOJI['rocket']} <b>الأوامر المتاحة</b> {EMOJI['rocket']}
-{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+👑━━━━━━━━━━━━━━━━━━━━👑
+🚀 <b>الأوامر المتاحة</b> 🚀
+👑━━━━━━━━━━━━━━━━━━━━👑
 
-{EMOJI['login']} <code>/login</code> → تسجيل دخول
-{EMOJI['fire']} <code>/takleesh</code> → هجوم تكليش
-{EMOJI['settings']} <code>/tasteer</code> → هجوم تسطير
-{EMOJI['stop']} <code>/stop</code> → إيقاف الهجوم
-{EMOJI['gift']} <code>/subscribe</code> → اشتراك مميز
-{EMOJI['time']} <code>/myplan</code> → متبقي من الاشتراك
+🔐 <code>/login</code> → تسجيل دخول
+🔥 <code>/takleesh</code> → هجوم تكليش
+⚙️ <code>/tasteer</code> → هجوم تسطير
+🛑 <code>/stop</code> → إيقاف الهجوم
+🎁 <code>/subscribe</code> → اشتراك مميز
+⏰ <code>/myplan</code> → متبقي من الاشتراك
 
-{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
-{EMOJI['crown']} <b>المطور</b> : {OWNER_USERNAME} {EMOJI['crown']}
-{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+👑━━━━━━━━━━━━━━━━━━━━👑
+👑 <b>المطور</b> : {OWNER_USERNAME} 👑
+👑━━━━━━━━━━━━━━━━━━━━👑
 """
-    await bot.send_photo(message.chat.id, "https://l.top4top.io/p_3804s3rqj0.jpg", caption=caption, parse_mode="HTML")
+    try:
+        await bot.send_photo(message.chat.id, "https://l.top4top.io/p_3804s3rqj0.jpg", caption=caption, parse_mode="HTML")
+    except:
+        await bot.send_message(message.chat.id, caption, parse_mode="HTML")
 
 @bot.message_handler(commands=['subscribe'])
 async def subscribe(message):
-    await bot.send_sticker(message.chat.id, STICKERS["gift"])
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["gift"])
+    except:
+        pass
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
-        InlineKeyboardButton(f"{EMOJI['star']} ساعة - 15", callback_data="sub_hour"),
-        InlineKeyboardButton(f"{EMOJI['diamond']} يوم - 50", callback_data="sub_day"),
-        InlineKeyboardButton(f"{EMOJI['crown']} اسبوع - 150", callback_data="sub_week"),
-        InlineKeyboardButton(f"{EMOJI['fire']} شهر - 250", callback_data="sub_month")
+        InlineKeyboardButton(f"⭐ ساعة - 15", callback_data="sub_hour"),
+        InlineKeyboardButton(f"💎 يوم - 50", callback_data="sub_day"),
+        InlineKeyboardButton(f"👑 اسبوع - 150", callback_data="sub_week"),
+        InlineKeyboardButton(f"🔥 شهر - 250", callback_data="sub_month")
     )
-    await bot.reply_to(message, f"{EMOJI['gift']} <b>اختر مدة الاشتراك</b>", reply_markup=markup, parse_mode="HTML")
+    await bot.reply_to(message, f"🎁 <b>اختر مدة الاشتراك</b>", reply_markup=markup, parse_mode="HTML")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("sub_"))
 async def handle_subscription(call):
@@ -372,7 +348,7 @@ async def handle_subscription(call):
         await bot.send_invoice(
             chat_id=call.message.chat.id,
             title=f"اشتراك {plan['name']}",
-            description=f"{EMOJI['star']} {plan['stars']} نجمة - {plan['name']}",
+            description=f"⭐ {plan['stars']} نجمة - {plan['name']}",
             invoice_payload=f"sub_{plan['name']}",
             provider_token="",
             currency="XTR",
@@ -387,76 +363,88 @@ async def checkout(pre_checkout_query):
 async def successful_payment(message):
     user_id = message.from_user.id
     payload = message.successful_payment.invoice_payload
-    await bot.send_sticker(message.chat.id, STICKERS["success"])
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["success"])
+    except:
+        pass
     if "ساعة" in payload:
         add_subscription(user_id, 1)
-        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة ساعة")
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراكك لمدة ساعة")
     elif "يوم" in payload:
         add_subscription(user_id, 24)
-        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة يوم")
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراكك لمدة يوم")
     elif "اسبوع" in payload:
         add_subscription(user_id, 168)
-        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة اسبوع")
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراكك لمدة اسبوع")
     elif "شهر" in payload:
         add_subscription(user_id, 720)
-        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة شهر")
+        await bot.reply_to(message, f"✅ تم تفعيل اشتراكك لمدة شهر")
 
 @bot.message_handler(commands=['myplan'])
 async def myplan(message):
-    await bot.send_sticker(message.chat.id, STICKERS["diamond"])
-    await bot.reply_to(message, f"{EMOJI['diamond']} حالتك: {get_subscription_time(message.from_user.id)}")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["diamond"])
+    except:
+        pass
+    await bot.reply_to(message, f"💎 حالتك: {get_subscription_time(message.from_user.id)}")
 
 @bot.message_handler(commands=['gift'])
 async def gift_subscription(message):
     if message.from_user.id != OWNER_ID:
-        await send_fancy_reply(message, f"{EMOJI['error']} للأونر فقط", "error")
+        await send_fancy_reply(message, f"❌ للأونر فقط", "error")
         return
     args = message.text.split(maxsplit=2)
     if len(args) < 3:
-        await send_fancy_reply(message, f"{EMOJI['warning']} /gift [ايدي] [مدة]\nمثال: /gift 8619852744 5 دقائق", "warning")
+        await send_fancy_reply(message, f"⚠️ /gift [ايدي] [مدة]\nمثال: /gift 8619852744 5 دقائق", "warning")
         return
     try:
         target_id = int(args[1])
         hours = parse_duration(args[2])
         if hours:
             add_subscription(target_id, hours)
-            await send_fancy_reply(message, f"{EMOJI['success']} تم تفعيل اشتراك {target_id}", "success")
+            await send_fancy_reply(message, f"✅ تم تفعيل اشتراك {target_id}", "success")
             try:
                 await bot.send_sticker(target_id, STICKERS["gift"])
-                await bot.send_message(target_id, f"{EMOJI['gift']} تم تفعيل اشتراك لك لمدة {args[2]} بواسطة الأونر {OWNER_USERNAME}")
+                await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {args[2]} بواسطة الأونر {OWNER_USERNAME}")
             except:
                 pass
     except:
-        await send_fancy_reply(message, f"{EMOJI['error']} خطأ في البيانات", "error")
+        await send_fancy_reply(message, f"❌ خطأ في البيانات", "error")
 
 @bot.message_handler(commands=['login'])
 async def login(message):
     user_id = message.from_user.id
     if not is_subscribed(user_id):
-        await send_fancy_reply(message, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
+        await send_fancy_reply(message, f"❌ اشتراك مطلوب: /subscribe", "error")
         return
     if is_verified(user_id):
-        await send_fancy_reply(message, f"{EMOJI['success']} مسجل بالفعل", "success")
+        await send_fancy_reply(message, f"✅ مسجل بالفعل", "success")
         return
     user_steps[user_id] = {"step": "waiting_phone"}
-    await bot.send_sticker(message.chat.id, STICKERS["login"])
-    await bot.reply_to(message, f"{EMOJI['login']} <b>ارسل رقمك مع +</b>\nمثال: +966512345678", parse_mode="HTML")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["login"])
+    except:
+        pass
+    await bot.reply_to(message, f"🔐 <b>ارسل رقمك مع +</b>\nمثال: +966512345678", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_phone")
 async def handle_phone(message):
     user_id = message.from_user.id
     phone = message.text.strip()
     if not phone.startswith('+'):
-        await send_fancy_reply(message, f"{EMOJI['error']} الرقم يبدأ بـ +", "error")
+        await send_fancy_reply(message, f"❌ الرقم يبدأ بـ +", "error")
         return
-    await bot.send_sticker(message.chat.id, STICKERS["loading"])
-    await bot.reply_to(message, f"{EMOJI['loading']} جاري ارسال الكود...")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["loading"])
+    except:
+        pass
+    await bot.reply_to(message, f"⏳ جاري ارسال الكود...")
     result = await send_code_telethon(user_id, phone)
     if result is True:
         user_steps[user_id] = {"step": "waiting_code"}
-        await send_fancy_reply(message, f"{EMOJI['success']} تم ارسال الكود\nادخل الكود بارقام فقط:", "success")
+        await send_fancy_reply(message, f"✅ تم ارسال الكود\nادخل الكود بارقام فقط:", "success")
     else:
-        await send_fancy_reply(message, f"{EMOJI['error']} فشل: {result}", "error")
+        await send_fancy_reply(message, f"❌ فشل: {result}", "error")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_code")
@@ -464,18 +452,21 @@ async def handle_code(message):
     user_id = message.from_user.id
     code = message.text.strip().replace(" ", "")
     if not code.isdigit():
-        await send_fancy_reply(message, f"{EMOJI['error']} الكود ارقام فقط", "error")
+        await send_fancy_reply(message, f"❌ الكود ارقام فقط", "error")
         return
     result = await verify_code_telethon(user_id, code)
     if result is True:
         del user_steps[user_id]
-        await bot.send_sticker(message.chat.id, STICKERS["success"])
-        await bot.reply_to(message, f"{EMOJI['success']} تم الدخول\n{EMOJI['fire']} /takleesh\n{EMOJI['settings']} /tasteer")
+        try:
+            await bot.send_sticker(message.chat.id, STICKERS["success"])
+        except:
+            pass
+        await bot.reply_to(message, f"✅ تم الدخول\n🔥 /takleesh\n⚙️ /tasteer")
     elif result == "password_needed":
         user_steps[user_id] = {"step": "waiting_password"}
-        await send_fancy_reply(message, f"{EMOJI['lock']} ارسل كلمة المرور:", "login")
+        await send_fancy_reply(message, f"🔒 ارسل كلمة المرور:", "login")
     else:
-        await send_fancy_reply(message, f"{EMOJI['error']} كود خطأ", "error")
+        await send_fancy_reply(message, f"❌ كود خطأ", "error")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
@@ -485,34 +476,40 @@ async def handle_password(message):
     result = await verify_password_telethon(user_id, password)
     if result is True:
         del user_steps[user_id]
-        await bot.send_sticker(message.chat.id, STICKERS["success"])
-        await bot.reply_to(message, f"{EMOJI['success']} تم الدخول")
+        try:
+            await bot.send_sticker(message.chat.id, STICKERS["success"])
+        except:
+            pass
+        await bot.reply_to(message, f"✅ تم الدخول")
     else:
-        await send_fancy_reply(message, f"{EMOJI['error']} كلمة مرور خطأ", "error")
+        await send_fancy_reply(message, f"❌ كلمة مرور خطأ", "error")
         del user_steps[user_id]
 
 @bot.message_handler(commands=['takleesh'])
 async def takleesh(message):
     user_id = message.from_user.id
     if not is_subscribed(user_id):
-        await send_fancy_reply(message, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
+        await send_fancy_reply(message, f"❌ اشتراك مطلوب: /subscribe", "error")
         return
     if not is_verified(user_id):
-        await send_fancy_reply(message, f"{EMOJI['error']} سجل دخول: /login", "error")
+        await send_fancy_reply(message, f"❌ سجل دخول: /login", "error")
         return
     if user_id in active_spams:
-        await send_fancy_reply(message, f"{EMOJI['warning']} عملية شغالة: /stop", "warning")
+        await send_fancy_reply(message, f"⚠️ عملية شغالة: /stop", "warning")
         return
     user_steps[user_id] = {"step": "takleesh_target"}
-    await bot.send_sticker(message.chat.id, STICKERS["attack"])
-    await bot.reply_to(message, f"{EMOJI['target']} <b>ارسل معرف المستهدف</b> (@username او ID):", parse_mode="HTML")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["attack"])
+    except:
+        pass
+    await bot.reply_to(message, f"🎯 <b>ارسل معرف المستهدف</b> (@username او ID):", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
 async def takleesh_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "takleesh_count", "target": target}
-    await bot.reply_to(message, f"{EMOJI['stats']} <b>عدد الرسائل:</b>", parse_mode="HTML")
+    await bot.reply_to(message, f"📊 <b>عدد الرسائل:</b>", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
 async def takleesh_count(message):
@@ -522,12 +519,15 @@ async def takleesh_count(message):
         if count < 1:
             raise ValueError
     except:
-        await send_fancy_reply(message, f"{EMOJI['error']} عدد غير صالح", "error")
+        await send_fancy_reply(message, f"❌ عدد غير صالح", "error")
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.send_sticker(message.chat.id, STICKERS["rocket"])
-    await bot.reply_to(message, f"{EMOJI['rocket']} جاري ارسال {count} كليشة")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["rocket"])
+    except:
+        pass
+    await bot.reply_to(message, f"🚀 جاري ارسال {count} كليشة")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -535,24 +535,27 @@ async def takleesh_count(message):
 async def tasteer(message):
     user_id = message.from_user.id
     if not is_subscribed(user_id):
-        await send_fancy_reply(message, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
+        await send_fancy_reply(message, f"❌ اشتراك مطلوب: /subscribe", "error")
         return
     if not is_verified(user_id):
-        await send_fancy_reply(message, f"{EMOJI['error']} سجل دخول: /login", "error")
+        await send_fancy_reply(message, f"❌ سجل دخول: /login", "error")
         return
     if user_id in active_spams:
-        await send_fancy_reply(message, f"{EMOJI['warning']} عملية شغالة: /stop", "warning")
+        await send_fancy_reply(message, f"⚠️ عملية شغالة: /stop", "warning")
         return
     user_steps[user_id] = {"step": "tasteer_target"}
-    await bot.send_sticker(message.chat.id, STICKERS["attack"])
-    await bot.reply_to(message, f"{EMOJI['target']} <b>ارسل معرف المستهدف</b> (@username او ID):", parse_mode="HTML")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["attack"])
+    except:
+        pass
+    await bot.reply_to(message, f"🎯 <b>ارسل معرف المستهدف</b> (@username او ID):", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
 async def tasteer_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "tasteer_lines", "target": target}
-    await bot.reply_to(message, f"{EMOJI['stats']} <b>عدد الاسطر:</b>", parse_mode="HTML")
+    await bot.reply_to(message, f"📊 <b>عدد الاسطر:</b>", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_lines")
 async def tasteer_lines(message):
@@ -562,12 +565,15 @@ async def tasteer_lines(message):
         if lines < 1:
             raise ValueError
     except:
-        await send_fancy_reply(message, f"{EMOJI['error']} عدد غير صالح", "error")
+        await send_fancy_reply(message, f"❌ عدد غير صالح", "error")
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.send_sticker(message.chat.id, STICKERS["rocket"])
-    await bot.reply_to(message, f"{EMOJI['rocket']} جاري ارسال {lines} سطر")
+    try:
+        await bot.send_sticker(message.chat.id, STICKERS["rocket"])
+    except:
+        pass
+    await bot.reply_to(message, f"🚀 جاري ارسال {lines} سطر")
     asyncio.create_task(send_tasteer_messages(user_id, target, lines, message.chat.id))
     del user_steps[user_id]
 
@@ -576,10 +582,13 @@ async def stop(message):
     user_id = message.from_user.id
     if user_id in active_spams:
         active_spams[user_id]["stop"] = True
-        await bot.send_sticker(message.chat.id, STICKERS["stop"])
-        await bot.reply_to(message, f"{EMOJI['stop']} تم الايقاف")
+        try:
+            await bot.send_sticker(message.chat.id, STICKERS["stop"])
+        except:
+            pass
+        await bot.reply_to(message, f"🛑 تم الايقاف")
     else:
-        await send_fancy_reply(message, f"{EMOJI['warning']} لا توجد عملية", "warning")
+        await send_fancy_reply(message, f"⚠️ لا توجد عملية", "warning")
 
 flask_app = Flask(__name__)
 
@@ -593,8 +602,9 @@ def run_flask():
 
 async def main():
     print("🔥 TNT SHADOW BOT شغال 🔥")
-    print("✅ تم تحديث التوكن والأيدي")
+    print(f"✅ التوكن: {BOT_TOKEN[:20]}...")
     print(f"✅ الأونر ID: {OWNER_ID}")
+    print("✅ البوت جاهز للاستخدام!")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
 
