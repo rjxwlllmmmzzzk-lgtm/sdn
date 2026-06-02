@@ -11,10 +11,11 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice
 from flask import Flask
 
+# =============== TOKENS & IDs ===============
 API_ID = 30874435
 API_HASH = "cc3b98786456de26fe5e803910051cea"
-BOT_TOKEN = "8817608659:AAF8O-I58x-khZLq4AzY-OWTyfgPIcNEo1M"
-OWNER_ID = 8603631953
+BOT_TOKEN = "8811228549:AAGsFA1_LhxrGg0MBb1fdN47tBj9q2VjK4E"
+OWNER_ID = 8619852744
 OWNER_USERNAME = "@Dwojj"
 
 user_sessions = {}
@@ -23,10 +24,71 @@ user_steps = {}
 
 DB_PATH = "subscriptions.db"
 
+# =============== ملصقات مميزة فخمة جداً ===============
+STICKERS = {
+    "welcome": "CAACAgQAAxkBAAEB9MJlhG0AAWwVhCwFJjIAASjC2SujAAEKAg",      # ترحيب فخم
+    "success": "CAACAgQAAxkBAAEB9NNlhG1-sZxZqWJfSvRgTl1RqPqZAg",      # نجاح فاخر
+    "error": "CAACAgQAAxkBAAEB9NdjhG2O3Wj6qYzR7VrRqPqZAg",           # خطأ
+    "loading": "CAACAgQAAxkBAAEB9NtlhG2kX0i7BkL1RqPqZAg",            # جاري التحميل
+    "attack": "CAACAgQAAxkBAAEB9N9lhG25bRjTl1RqPqZAg",               # هجوم 🔥
+    "luxury": "CAACAgQAAxkBAAEB9ONlhG3KbRjTl1RqPqZAg",               # فخم 👑
+    "diamond": "CAACAgQAAxkBAAEB9OVlhG3RbRjTl1RqPqZAg",              # ماسة 💎
+    "stop": "CAACAgQAAxkBAAEB9N9lhG25bRjTl1RqPqZAg",                 # إيقاف
+    "login": "CAACAgQAAxkBAAEB9M9lhG1XWkKp0zL7xk7s8nR9qPqZAg",       # تسجيل دخول
+    "gift": "CAACAgQAAxkBAAEB9ONlhG3KbRjTl1RqPqZAg",                 # هدية 🎁
+    "warning": "CAACAgQAAxkBAAEB9NllhG2bVbR7jTl1RqPqZAg",            # تحذير ⚠️
+    "rocket": "CAACAgQAAxkBAAEB9N1lhG2wYbRjTl1RqPqZAg",              # صاروخ 🚀
+}
+
+# =============== إيموجيات زخرفية فخمة ===============
+EMOJI = {
+    "fire": "🔥",
+    "crown": "👑",
+    "diamond": "💎",
+    "star": "⭐",
+    "rocket": "🚀",
+    "warning": "⚠️",
+    "success": "✅",
+    "error": "❌",
+    "loading": "⏳",
+    "stop": "🛑",
+    "login": "🔐",
+    "gift": "🎁",
+    "settings": "⚙️",
+    "user": "👤",
+    "users": "👥",
+    "stats": "📊",
+    "time": "⏰",
+    "money": "💰",
+    "lock": "🔒",
+    "unlock": "🔓",
+}
+
+def get_sticker(sticker_key):
+    """الحصول على ملصق عشوائي من المجموعة"""
+    return STICKERS.get(sticker_key, STICKERS["luxury"])
+
+async def send_fancy_message(chat_id, text, sticker_key=None, parse_mode="HTML"):
+    """إرسال رسالة مع ملصق فخم"""
+    if sticker_key:
+        try:
+            await bot.send_sticker(chat_id, get_sticker(sticker_key))
+        except:
+            pass
+    await bot.send_message(chat_id, text, parse_mode=parse_mode)
+
+async def send_fancy_reply(message, text, sticker_key=None, parse_mode="HTML"):
+    """الرد على رسالة مع ملصق فخم"""
+    if sticker_key:
+        try:
+            await bot.send_sticker(message.chat.id, get_sticker(sticker_key))
+        except:
+            pass
+    await bot.reply_to(message, text, parse_mode=parse_mode)
+
 def get_db_connection():
-    """إنشاء اتصال جديد بقاعدة البيانات مع timeout أطول"""
     conn = sqlite3.connect(DB_PATH, timeout=30)
-    conn.execute("PRAGMA journal_mode=WAL")  # وضع WAL يحسن التوافق
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 def init_db():
@@ -58,7 +120,7 @@ def is_subscribed(user_id):
                 conn.close()
         return False
     except Exception as e:
-        print(f"DB Error in is_subscribed: {e}")
+        print(f"DB Error: {e}")
         return False
 
 def add_subscription(user_id, duration_hours):
@@ -72,7 +134,7 @@ def add_subscription(user_id, duration_hours):
         conn.close()
         return True
     except Exception as e:
-        print(f"DB Error in add_subscription: {e}")
+        print(f"DB Error: {e}")
         return False
 
 def get_subscription_time(user_id):
@@ -96,7 +158,6 @@ def get_subscription_time(user_id):
                 return f"{minutes}د"
         return "غير مشترك"
     except Exception as e:
-        print(f"DB Error in get_subscription_time: {e}")
         return "خطأ"
 
 def parse_duration(text):
@@ -120,95 +181,48 @@ init_db()
 VERBS_POWER = [
     "لحلكك", "اشيلك", "عبالك", "انيجمك", "مصمص", "اهف", "اربطك", "اطحن", "اكهرب", "احط",
     "اقتحم", "اخدر", "انيج", "ربك", "اعبد", "ادحس", "افلش", "اذب", "اكعد", "ازورك", "اصعق",
-    "اطشر", "اعجن", "اشكه", "اشنقك", "ابعبص", "اتفل", "اتسودن", "اتنايج", "اخرمش", "انكز",
-    "اصمل", "اضرب", "اخلي", "ارمي", "احبس", "اذبح", "احرق", "اخرب", "ادمر", "اكسر", "افلق",
-    "اشطر", "اشيل", "انفخ", "اطلق", "ارجف", "اخلع", "اقلع", "احشي", "اعشي", "افشي", "اقتلع",
-    "احتل", "اسلب", "انهب", "احتج", "اسجن", "اعذب", "احكم", "اسود", "احمر", "اصفر", "اخضر",
-    "ازرق", "ابيض", "اسود", "احلك", "انور", "اظلم", "اعدل", "اجور", "اطيب", "اخبث", "اطهر",
-    "انجس", "اطلق", "احبس", "اطرد", "اهجر", "اترك", "اخلع", "انزع", "اقطع", "احشي", "املأ"
 ]
 
 NOUNS_POWER = [
     "الهالبك", "بعيري", "تيزمك", "علصدرك", "عيورتي", "بقياطين", "ضلوعك", "قضيبي", "نسلك",
     "زبي", "صريمك", "كسمك", "بكسختك", "براسك", "لكسمك", "بطيزك", "بكس امك", "بكسم اختك",
-    "بطيز اختك", "بكسم خويك", "بكس خواتك", "ديوسك", "نهود امك", "صرمك", "مخك", "طيزك",
-    "كس اختك", "كس امك", "عيري", "جبتي", "ربعك", "خواتك", "عيالك", "نياكة", "ديوس اختك",
-    "سلالتك", "اجدادك", "احفادك", "ذريتك", "عشيرتك", "قبيلتك", "فخذك", "بيتك", "دارك",
-    "ملكك", "كرسيك", "تاجك", "عرشك", "سلطانك", "حكمك", "قوتك", "جبروتك", "عزك", "شرفك",
-    "كرامتك", "مروتك", "رجولتك", "انوثتك", "رجلك", "انثاك", "ذكرك", "اناك", "انت", "نفسك"
 ]
 
 INSULTS_POWER = [
     "يا ابن الكلب", "يا ابن الشرموطه", "يا ابن القحبه", "يا ديوث", "يا خنيث", "يا ابن المتناكه",
     "يا ابن العاهره", "يا ابن الدعاره", "يا ابن الزانيه", "يا ابن الكحبه", "يا ابن العرص",
-    "يا خول", "يا جرار", "يا منيوك", "يا فحل اختك", "يا فحل امك", "يا ابن الحمار", "يا ابن البقره",
-    "يا ابن الخنزير", "يا كلب", "يا حمار", "يا تيس", "يا قرد", "يا خنزير", "يا نجس", "يا رجس",
-    "يا وسخ", "يا جربان", "يا معفن", "يا خبيث", "يا رذيل", "يا حقير", "يا دنيء", "يا فاسق",
-    "يا فاجر", "يا ملوث", "يا زب", "يا كس", "يا عير", "يا طيز", "يا شرموط", "يا قحبه", "يا عاهرة",
-    "يا نتن", "يا مقرف", "يا مستقذر", "يا منحط", "يا سافل", "يا نذل", "يا لئيم", "يا وغد",
-    "يا داعر", "يا فاجر", "يا منافق", "يا كذاب", "يا زبالة", "يا قمامة", "يا وساخة", "يا دنس"
 ]
 
 VERBS_EXTRA = [
     "كس امك", "كسمك", "كس اختك", "كسم امك", "كس عرضك", "كسم عرضك", "انيك امك", "انيك اختك",
-    "انيك كس امك", "انيك كس اختك", "اطحن مخك", "افطر كبدك", "اشرب دمك", "اكل لحمك", "احرق بيتكم",
-    "اخرب عليك", "افضحك", "احرجك", "فضحتنا", "اخليك تندم", "اخليك تبكي", "اخليك تصيح",
-    "اخلي عيالك يبكون", "اخلي زوجتك تطلقك", "اخلي اهلك يتبرون منك", "ادمر حياتك", "اخليك فاشل",
-    "اقتلك", "اذبحك", "اطلق عليك", "اخنقك", "اغتصب نسلك", "انيك تربيتك", "افضح سمعتك",
-    "احرق مستقبلك", "ادمر احلامك", "اكسر طموحاتك", "احبس امالك", "انسي وجودك", "امحي ذكرك"
+    "انيك كس امك", "انيك كس اختك", "اطحن مخك", "افطر كبدك", "اشرب دمك", "اكل لحمك",
 ]
 
 SAUDI_STRONG = [
     "يابنالقحبه", "شرموطه", "فحلمك", "يابن الزانيا", "انيكمك", "ركلمتك", "قذفتكمك",
-    "خنيث", "ديوث", "قحبه", "عاهرة", "منيوك", "جرار", "سافل", "نذل", "حقير", "وضيع", "خسيس",
-    "لئيم", "دنيء", "ماين", "فاشل", "تافه", "غبي", "جاهل", "متخلف", "رجعي", "ظلامي", "ارعن",
-    "جبان", "خواف", "نعامة", "فأر", "صرصور", "ذباب", "علق", "برغوث", "قمل", "ديدان", "عفن",
-    "زباله", "قمامه", "وسخ", "قذر", "نجس", "رجس", "ملوث", "فاسد", "منحط", "ساقط", "هابط",
-    "تافه", "سخيف", "مثير للشفقة", "محزن", "مخزي", "عار", "فضيحة", "شنار", "خزي", "ذل", "هوان",
-    "لعنة", "طرد", "لعن", "سب", "شتم", "قذف", "تهمة", "افتراء", "كذب", "زور", "بهتان", "نفاق", "رياء",
-    "خداع", "غش", "احتيال", "مكر", "كيد", "خبث", "دهاء", "دهس", "دعس", "وطء", "ركل", "لكم",
-    "صفع", "ضرب", "جلد", "عقر", "جرح", "قطع", "كسر", "حطم", "سحق", "طحن", "فلك", "شظى", "تمزق",
-    "انفجار", "احتراق", "تسمم", "خنق", "ذبح", "نحر", "صلب", "تقطيع", "تمزيق", "تحطيم", "تدمير"
+    "خنيث", "ديوث", "قحبه", "عاهرة", "منيوك", "جرار", "سافل", "نذل", "حقير",
 ]
 
 EXTRA_STRONG_WORDS = [
-    "يابن المتناك", "يابن الزاني", "يابن الفاجر", "يابن الخاين", "يابن الحقير", "يابن الوضيع",
-    "يابن الخسيس", "يابن الدنيء", "يابن التافه", "يابن السخيف", "يا كافر", "يا منافق", "يا مرتد",
-    "يا ملحد", "يا زنديق", "يا فاجر", "يا ظالم", "يا غاشم", "يا طاغية", "يا مستبد", "يا دكتاتور",
-    "خنزير ابن خنزير", "كلب ابن كلب", "حمار ابن حمار", "تيس ابن تيس", "قرد ابن قرد", "فأر ابن فأر",
-    "صرصور ابن صرصور", "ذبابة ابن ذبابة", "علق ابن علق", "برغوث ابن برغوث", "قملة ابن قملة",
-    "دودة ابن دودة", "عفنة ابن عفنة", "زبالة ابن زبالة", "قمامة ابن قمامة", "وسخة ابن وسخة"
+    "يابن المتناك", "يابن الزاني", "يابن الفاجر", "يابن الخاين", "يابن الحقير",
+    "خنزير ابن خنزير", "كلب ابن كلب", "حمار ابن حمار",
 ]
 
 TASTEER_STRONG = [
     "كس امك", "كسمك", "كس اختك", "كسم امك", "كس عرضك", "كسم عرضك", "انيك امك", "انيك اختك",
-    "انيك كس امك", "انيك كس اختك", "اطحن مخك", "افطر كبدك", "اشرب دمك", "اكل لحمك", "احرق بيتكم",
-    "اخرب عليك", "افضحك", "احرجك", "فضحتنا", "اخليك تندم", "اخليك تبكي", "اخليك تصيح",
-    "اخلي عيالك يبكون", "اخلي زوجتك تطلقك", "اخلي اهلك يتبرون منك", "ادمر حياتك", "اخليك فاشل",
-    "اقتلك", "اذبحك", "اطلق عليك", "اخنقك", "اغتصب نسلك", "انيك تربيتك", "افضح سمعتك",
-    "احرق مستقبلك", "ادمر احلامك", "اكسر طموحاتك", "احبس امالك", "انسي وجودك", "امحي ذكرك"
+    "انيك كس امك", "انيك كس اختك", "اطحن مخك", "افطر كبدك",
 ]
 
 MISC_STRONG = [
-    "امك ديوثة", "اختك شرموطة", "خواتك كحبات", "نسلك منيوك", "عيلتك كلها زبالة", "اهلك كلهم كلاب",
-    "بيتك قمامة", "دارك وسخة", "حياتك فاشلة", "مستقبلك مظلم", "طموحاتك محطمة", "احلامك مسروقة",
-    "امالك ضائعة", "وجودك تافه", "ذكرك منسي", "اسمك ملعون", "صورتك مشوهة", "سمعتك مدمرة",
-    "كرامتك مهانة", "شرفك مداس", "عزك مذلول", "قوتك منهزمة", "جبروتك محطم", "سلطانك منتهي"
+    "امك ديوثة", "اختك شرموطة", "خواتك كحبات", "نسلك منيوك", "عيلتك كلها زبالة",
 ]
 
 ENDING_STRONG = [
-    "وخر", "وانتهى", "والسلام", "والله لا يعود", "واخرتها معي", "وتوبتك عندي", "وعقباك النار",
-    "ومنها لله", "والله غالب", "والنصر لنا", "والخذلان عليك", "والعار لك", "والفضيحة بوجهك",
-    "والذل لك", "والهوان عليك", "واللعنة على تربيتك", "والطرد لك", "والبعد عنا", "والنهاية لك"
+    "وخر", "وانتهى", "والسلام", "والله لا يعود", "واخرتها معي",
 ]
 
 NEW_STRONG_WORDS = [
-    "يا ابن الكلب الأجرب", "يا ابن القحبة المنتنة", "يا شرموطة شارع", "يا ديوث الحارة", "يا خنيث العائلة",
-    "يا منيوك الزبالة", "يا جرار القمامة", "يا فاشل الدرجة الأولى", "يا تافه المستوى", "يا غبي بامتياز",
-    "يا جاهل مركب", "يا متخلف وراثياً", "يا ظلامي العقل", "يا ارعن الطباع", "يا جبان العصر",
-    "يا خواف المشهور", "يا نعامة الصحراء", "يا فأر المجاري", "يا صرصور الحمام", "يا ذبابة المطبخ",
-    "علقة بنت علقة", "برغوث بنت برغوث", "قملة بنت قملة", "دودة بنت دودة", "عفنة بنت عفنة",
-    "زبالة بنت زبالة", "قمامة بنت قمامة", "وسخة بنت وسخة", "نتانة بنت نتانة", "مقرف بنت مقرف"
+    "يا ابن الكلب الأجرب", "يا ابن القحبة المنتنة", "يا شرموطة شارع",
 ]
 
 def generate_millions_takleesh():
@@ -246,13 +260,6 @@ def generate_millions_tasteer():
         f"يا {random.choice(INSULTS_POWER)} يا {random.choice(SAUDI_STRONG)} يا {random.choice(TASTEER_STRONG)}",
         f"{random.choice(TASTEER_STRONG)} يا {random.choice(SAUDI_STRONG)} {random.choice(INSULTS_POWER)}",
         f"{random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)}",
-        f"انيك {random.choice(SAUDI_STRONG)} و{random.choice(TASTEER_STRONG)} يا {random.choice(INSULTS_POWER)}",
-        f"{random.choice(SAUDI_STRONG)} انت واهلك كلهم {random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
-        f"{random.choice(INSULTS_POWER)} {random.choice(SAUDI_STRONG)} {random.choice(TASTEER_STRONG)} يا خنيث",
-        f"{random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(SAUDI_STRONG)}",
-        f"{random.choice(EXTRA_STRONG_WORDS)} {random.choice(TASTEER_STRONG)} {random.choice(ENDING_STRONG)}",
-        f"{random.choice(MISC_STRONG)} {random.choice(SAUDI_STRONG)} {random.choice(INSULTS_POWER)}",
-        f"{random.choice(NEW_STRONG_WORDS)} {random.choice(TASTEER_STRONG)} {random.choice(INSULTS_POWER)}",
     ]
     return random.choice(patterns)
 
@@ -308,7 +315,7 @@ def get_client(user_id):
 
 async def send_takleesh_messages(user_id, target, count, chat_id):
     if not is_subscribed(user_id):
-        await bot.send_message(chat_id, "❌ اشتراك مطلوب: /subscribe")
+        await send_fancy_message(chat_id, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
         return
     if user_id in active_spams:
         active_spams[user_id]["stop"] = False
@@ -316,29 +323,29 @@ async def send_takleesh_messages(user_id, target, count, chat_id):
         active_spams[user_id] = {"stop": False}
     client = get_client(user_id)
     if not client:
-        await bot.send_message(chat_id, "❌ خطأ في الجلسة")
+        await send_fancy_message(chat_id, f"{EMOJI['error']} خطأ في الجلسة", "error")
         return
     
     for i in range(count):
         if active_spams[user_id]["stop"]:
-            await bot.send_message(chat_id, "🛑 تم الإيقاف")
+            await send_fancy_message(chat_id, f"{EMOJI['stop']} تم الإيقاف", "stop")
             break
         word = generate_millions_takleesh()
         try:
             await client.send_message(target, word)
-            await bot.send_message(chat_id, f"✅ [{i+1}/{count}] تم الارسال")
+            await send_fancy_message(chat_id, f"{EMOJI['success']} [{i+1}/{count}] تم الارسال", "success")
         except Exception as e:
-            await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
+            await send_fancy_message(chat_id, f"{EMOJI['error']} فشل: {str(e)}", "error")
             break
         await asyncio.sleep(3)
     
-    await bot.send_message(chat_id, f"✅ تم إرسال {count} كليشة")
+    await send_fancy_message(chat_id, f"{EMOJI['success']} تم إرسال {count} كليشة", "success")
     if user_id in active_spams:
         del active_spams[user_id]
 
 async def send_tasteer_messages(user_id, target, lines, chat_id):
     if not is_subscribed(user_id):
-        await bot.send_message(chat_id, "❌ اشتراك مطلوب: /subscribe")
+        await send_fancy_message(chat_id, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
         return
     if user_id in active_spams:
         active_spams[user_id]["stop"] = False
@@ -346,64 +353,71 @@ async def send_tasteer_messages(user_id, target, lines, chat_id):
         active_spams[user_id] = {"stop": False}
     client = get_client(user_id)
     if not client:
-        await bot.send_message(chat_id, "❌ خطأ في الجلسة")
+        await send_fancy_message(chat_id, f"{EMOJI['error']} خطأ في الجلسة", "error")
         return
     
     for i in range(lines):
         if active_spams[user_id]["stop"]:
-            await bot.send_message(chat_id, "🛑 تم الإيقاف")
+            await send_fancy_message(chat_id, f"{EMOJI['stop']} تم الإيقاف", "stop")
             break
         word = generate_millions_tasteer()
         try:
             await client.send_message(target, word)
-            await bot.send_message(chat_id, f"✅ [{i+1}/{lines}] تم الارسال")
+            await send_fancy_message(chat_id, f"{EMOJI['success']} [{i+1}/{lines}] تم الارسال", "success")
         except Exception as e:
-            await bot.send_message(chat_id, f"❌ فشل: {str(e)}")
+            await send_fancy_message(chat_id, f"{EMOJI['error']} فشل: {str(e)}", "error")
             break
         await asyncio.sleep(3)
     
-    await bot.send_message(chat_id, f"✅ تم إرسال {lines} سطر")
+    await send_fancy_message(chat_id, f"{EMOJI['success']} تم إرسال {lines} سطر", "success")
     if user_id in active_spams:
         del active_spams[user_id]
 
+# =============== واجهة ترحيب فخمة جداً ===============
 @bot.message_handler(commands=['start'])
 async def start(message):
     status = get_subscription_time(message.from_user.id)
     name = message.from_user.first_name or "صديقي"
     
-    photo_url = "https://l.top4top.io/p_3804s3rqj0.jpg"
-    caption = (
-        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>🔥 TNT SHADOW BOT 🔥</b>\n"
-        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n\n"
-        f"<b>✧ مرحبا {name}</b>\n"
-        f"<b>✧ الاشتراك : {status}</b>\n\n"
-        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
-        "<b>⚡ الاوامر</b>\n"
-        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n\n"
-        "<b>▪ /login • تسجيل دخول</b>\n"
-        "<b>▪ /takleesh • تكليش</b>\n"
-        "<b>▪ /tasteer • تسطير</b>\n"
-        "<b>▪ /stop • ايقاف</b>\n"
-        "<b>▪ /subscribe • اشتراك</b>\n"
-        "<b>▪ /myplan • متبقي</b>\n\n"
-        "<b>━━━━━━━━━━━━━━━━━━━━</b>\n"
-        f"<b>👑 المطور : {OWNER_USERNAME}</b>\n"
-        "<b>━━━━━━━━━━━━━━━━━━━━</b>"
-    )
+    # إرسال ملصق ترحيب فخم أولاً
+    await bot.send_sticker(message.chat.id, STICKERS["welcome"])
     
-    await bot.send_photo(message.chat.id, photo_url, caption=caption, parse_mode="HTML")
+    caption = f"""
+{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+{EMOJI['fire']} <b>TNT SHADOW BOT</b> {EMOJI['fire']}
+{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+
+{EMOJI['star']} <b>مرحباً {name}</b> {EMOJI['star']}
+{EMOJI['diamond']} <b>الاشتراك</b> : {status}
+
+{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+{EMOJI['rocket']} <b>الأوامر المتاحة</b> {EMOJI['rocket']}
+{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+
+{EMOJI['login']} <code>/login</code> → تسجيل دخول
+{EMOJI['fire']} <code>/takleesh</code> → هجوم تكليش
+{EMOJI['settings']} <code>/tasteer</code> → هجوم تسطير
+{EMOJI['stop']} <code>/stop</code> → إيقاف الهجوم
+{EMOJI['gift']} <code>/subscribe</code> → اشتراك مميز
+{EMOJI['time']} <code>/myplan</code> → متبقي من الاشتراك
+
+{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+{EMOJI['crown']} <b>المطور</b> : {OWNER_USERNAME} {EMOJI['crown']}
+{EMOJI['crown']}━━━━━━━━━━━━━━━━━━━━{EMOJI['crown']}
+"""
+    await bot.send_photo(message.chat.id, "https://l.top4top.io/p_3804s3rqj0.jpg", caption=caption, parse_mode="HTML")
 
 @bot.message_handler(commands=['subscribe'])
 async def subscribe(message):
+    await bot.send_sticker(message.chat.id, STICKERS["gift"])
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
-        InlineKeyboardButton("⭐ ساعة - 15", callback_data="sub_hour"),
-        InlineKeyboardButton("⭐ يوم - 50", callback_data="sub_day"),
-        InlineKeyboardButton("⭐ اسبوع - 150", callback_data="sub_week"),
-        InlineKeyboardButton("⭐ شهر - 250", callback_data="sub_month")
+        InlineKeyboardButton(f"{EMOJI['star']} ساعة - 15 {EMOJI['star']}", callback_data="sub_hour"),
+        InlineKeyboardButton(f"{EMOJI['diamond']} يوم - 50 {EMOJI['diamond']}", callback_data="sub_day"),
+        InlineKeyboardButton(f"{EMOJI['crown']} اسبوع - 150 {EMOJI['crown']}", callback_data="sub_week"),
+        InlineKeyboardButton(f"{EMOJI['fire']} شهر - 250 {EMOJI['fire']}", callback_data="sub_month")
     )
-    await bot.reply_to(message, "⭐ اختر مدة الاشتراك:", reply_markup=markup)
+    await bot.reply_to(message, f"{EMOJI['gift']} <b>اختر مدة الاشتراك</b> {EMOJI['gift']}", reply_markup=markup, parse_mode="HTML")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("sub_"))
 async def handle_subscription(call):
@@ -420,7 +434,7 @@ async def handle_subscription(call):
         await bot.send_invoice(
             chat_id=call.message.chat.id,
             title=f"اشتراك {plan['name']}",
-            description=f"⭐ {plan['stars']} نجمة - {plan['name']}",
+            description=f"{EMOJI['star']} {plan['stars']} نجمة - {plan['name']} {EMOJI['star']}",
             invoice_payload=f"sub_{plan['name']}",
             provider_token="",
             currency="XTR",
@@ -435,71 +449,76 @@ async def checkout(pre_checkout_query):
 async def successful_payment(message):
     user_id = message.from_user.id
     payload = message.successful_payment.invoice_payload
+    await bot.send_sticker(message.chat.id, STICKERS["success"])
     if "ساعة" in payload:
         add_subscription(user_id, 1)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة ساعة")
+        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة ساعة {EMOJI['success']}")
     elif "يوم" in payload:
         add_subscription(user_id, 24)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة يوم")
+        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة يوم {EMOJI['success']}")
     elif "اسبوع" in payload:
         add_subscription(user_id, 168)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة اسبوع")
+        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة اسبوع {EMOJI['success']}")
     elif "شهر" in payload:
         add_subscription(user_id, 720)
-        await bot.reply_to(message, "✅ تم تفعيل اشتراكك لمدة شهر")
+        await bot.reply_to(message, f"{EMOJI['success']} تم تفعيل اشتراكك لمدة شهر {EMOJI['success']}")
 
 @bot.message_handler(commands=['myplan'])
 async def myplan(message):
-    await bot.reply_to(message, f"⭐ حالتك: {get_subscription_time(message.from_user.id)}")
+    await bot.send_sticker(message.chat.id, STICKERS["diamond"])
+    await bot.reply_to(message, f"{EMOJI['diamond']} حالتك: {get_subscription_time(message.from_user.id)} {EMOJI['diamond']}")
 
 @bot.message_handler(commands=['gift'])
 async def gift_subscription(message):
     if message.from_user.id != OWNER_ID:
-        await bot.reply_to(message, "❌ للأونر فقط")
+        await send_fancy_reply(message, f"{EMOJI['error']} للأونر فقط", "error")
         return
     args = message.text.split(maxsplit=2)
     if len(args) < 3:
-        await bot.reply_to(message, "/gift [ايدي] [مدة]\nمثال: /gift 8619852744 5 دقائق")
+        await send_fancy_reply(message, f"{EMOJI['warning']} /gift [ايدي] [مدة]\nمثال: /gift 8619852744 5 دقائق", "warning")
         return
     try:
         target_id = int(args[1])
         hours = parse_duration(args[2])
         if hours:
             add_subscription(target_id, hours)
-            await bot.reply_to(message, f"✅ تم تفعيل اشتراك {target_id}")
+            await send_fancy_reply(message, f"{EMOJI['success']} تم تفعيل اشتراك {target_id}", "success")
             try:
-                await bot.send_message(target_id, f"🎁 تم تفعيل اشتراك لك لمدة {args[2]} بواسطة الأونر {OWNER_USERNAME}")
+                await bot.send_sticker(target_id, STICKERS["gift"])
+                await bot.send_message(target_id, f"{EMOJI['gift']} تم تفعيل اشتراك لك لمدة {args[2]} بواسطة الأونر {OWNER_USERNAME} {EMOJI['gift']}")
             except:
                 pass
     except:
-        await bot.reply_to(message, "❌ خطأ")
+        await send_fancy_reply(message, f"{EMOJI['error']} خطأ في البيانات", "error")
 
 @bot.message_handler(commands=['login'])
 async def login(message):
     user_id = message.from_user.id
     if not is_subscribed(user_id):
-        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        await send_fancy_reply(message, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
         return
     if is_verified(user_id):
-        await bot.reply_to(message, "✅ مسجل بالفعل")
+        await send_fancy_reply(message, f"{EMOJI['success']} مسجل بالفعل", "success")
         return
     user_steps[user_id] = {"step": "waiting_phone"}
-    await bot.reply_to(message, "📱 ارسل رقمك مع +\nمثال: +966512345678")
+    await bot.send_sticker(message.chat.id, STICKERS["login"])
+    await bot.reply_to(message, f"{EMOJI['login']} <b>ارسل رقمك مع +</b>\nمثال: +966512345678", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_phone")
 async def handle_phone(message):
     user_id = message.from_user.id
     phone = message.text.strip()
     if not phone.startswith('+'):
-        await bot.reply_to(message, "❌ الرقم يبدأ بـ +")
+        await send_fancy_reply(message, f"{EMOJI['error']} الرقم يبدأ بـ +", "error")
         return
-    await bot.reply_to(message, "⏳ جاري ارسال الكود...")
+    await bot.send_sticker(message.chat.id, STICKERS["loading"])
+    await bot.reply_to(message, f"{EMOJI['loading']} جاري ارسال الكود...")
     result = await send_code_telethon(user_id, phone)
     if result is True:
         user_steps[user_id] = {"step": "waiting_code"}
-        await bot.reply_to(message, "✅ تم ارسال الكود\nادخل الكود بارقام فقط:\nمثال: 12345")
+        await send_fancy_reply(message, f"{EMOJI['success']} تم ارسال الكود\nادخل الكود بارقام فقط:\nمثال: 12345", "success")
     else:
-        await bot.reply_to(message, f"❌ فشل: {result}")
+        await send_fancy_reply(message, f"{EMOJI['error']} فشل: {result}", "error")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_code")
@@ -507,17 +526,18 @@ async def handle_code(message):
     user_id = message.from_user.id
     code = message.text.strip().replace(" ", "")
     if not code.isdigit():
-        await bot.reply_to(message, "❌ الكود ارقام فقط")
+        await send_fancy_reply(message, f"{EMOJI['error']} الكود ارقام فقط", "error")
         return
     result = await verify_code_telethon(user_id, code)
     if result is True:
         del user_steps[user_id]
-        await bot.reply_to(message, "✅ تم الدخول\n/takleesh\n/tasteer")
+        await bot.send_sticker(message.chat.id, STICKERS["success"])
+        await bot.reply_to(message, f"{EMOJI['success']} تم الدخول\n{EMOJI['fire']} /takleesh\n{EMOJI['settings']} /tasteer")
     elif result == "password_needed":
         user_steps[user_id] = {"step": "waiting_password"}
-        await bot.reply_to(message, "🔐 ارسل كلمة المرور:")
+        await send_fancy_reply(message, f"{EMOJI['lock']} ارسل كلمة المرور:", "login")
     else:
-        await bot.reply_to(message, "❌ كود خطأ")
+        await send_fancy_reply(message, f"{EMOJI['error']} كود خطأ", "error")
         del user_steps[user_id]
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "waiting_password")
@@ -527,32 +547,34 @@ async def handle_password(message):
     result = await verify_password_telethon(user_id, password)
     if result is True:
         del user_steps[user_id]
-        await bot.reply_to(message, "✅ تم الدخول")
+        await bot.send_sticker(message.chat.id, STICKERS["success"])
+        await bot.reply_to(message, f"{EMOJI['success']} تم الدخول")
     else:
-        await bot.reply_to(message, "❌ كلمة مرور خطأ")
+        await send_fancy_reply(message, f"{EMOJI['error']} كلمة مرور خطأ", "error")
         del user_steps[user_id]
 
 @bot.message_handler(commands=['takleesh'])
 async def takleesh(message):
     user_id = message.from_user.id
     if not is_subscribed(user_id):
-        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        await send_fancy_reply(message, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
         return
     if not is_verified(user_id):
-        await bot.reply_to(message, "❌ سجل دخول: /login")
+        await send_fancy_reply(message, f"{EMOJI['error']} سجل دخول: /login", "error")
         return
     if user_id in active_spams:
-        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
+        await send_fancy_reply(message, f"{EMOJI['warning']} عملية شغالة: /stop", "warning")
         return
     user_steps[user_id] = {"step": "takleesh_target"}
-    await bot.reply_to(message, "🎯 ارسل معرف المستهدف (@username او ID):")
+    await bot.send_sticker(message.chat.id, STICKERS["attack"])
+    await bot.reply_to(message, f"{EMOJI['target']} <b>ارسل معرف المستهدف</b> (@username او ID):", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_target")
 async def takleesh_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "takleesh_count", "target": target}
-    await bot.reply_to(message, "🔢 عدد الرسائل:")
+    await bot.reply_to(message, f"{EMOJI['stats']} <b>عدد الرسائل:</b>", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "takleesh_count")
 async def takleesh_count(message):
@@ -562,11 +584,12 @@ async def takleesh_count(message):
         if count < 1:
             raise ValueError
     except:
-        await bot.reply_to(message, "❌ عدد غير صالح")
+        await send_fancy_reply(message, f"{EMOJI['error']} عدد غير صالح", "error")
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"⚡ جاري ارسال {count} كليشة (3 ثواني بين كل كليشة)")
+    await bot.send_sticker(message.chat.id, STICKERS["rocket"])
+    await bot.reply_to(message, f"{EMOJI['rocket']} جاري ارسال {count} كليشة (3 ثواني بين كل كليشة)")
     asyncio.create_task(send_takleesh_messages(user_id, target, count, message.chat.id))
     del user_steps[user_id]
 
@@ -574,23 +597,24 @@ async def takleesh_count(message):
 async def tasteer(message):
     user_id = message.from_user.id
     if not is_subscribed(user_id):
-        await bot.reply_to(message, "❌ اشتراك مطلوب: /subscribe")
+        await send_fancy_reply(message, f"{EMOJI['error']} اشتراك مطلوب: /subscribe", "error")
         return
     if not is_verified(user_id):
-        await bot.reply_to(message, "❌ سجل دخول: /login")
+        await send_fancy_reply(message, f"{EMOJI['error']} سجل دخول: /login", "error")
         return
     if user_id in active_spams:
-        await bot.reply_to(message, "⚠️ عملية شغالة: /stop")
+        await send_fancy_reply(message, f"{EMOJI['warning']} عملية شغالة: /stop", "warning")
         return
     user_steps[user_id] = {"step": "tasteer_target"}
-    await bot.reply_to(message, "🎯 ارسل معرف المستهدف (@username او ID):")
+    await bot.send_sticker(message.chat.id, STICKERS["attack"])
+    await bot.reply_to(message, f"{EMOJI['target']} <b>ارسل معرف المستهدف</b> (@username او ID):", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_target")
 async def tasteer_target(message):
     user_id = message.from_user.id
     target = message.text.strip()
     user_steps[user_id] = {"step": "tasteer_lines", "target": target}
-    await bot.reply_to(message, "🔢 عدد الاسطر:")
+    await bot.reply_to(message, f"{EMOJI['stats']} <b>عدد الاسطر:</b>", parse_mode="HTML")
 
 @bot.message_handler(func=lambda m: user_steps.get(m.from_user.id, {}).get("step") == "tasteer_lines")
 async def tasteer_lines(message):
@@ -600,11 +624,12 @@ async def tasteer_lines(message):
         if lines < 1:
             raise ValueError
     except:
-        await bot.reply_to(message, "❌ عدد غير صالح")
+        await send_fancy_reply(message, f"{EMOJI['error']} عدد غير صالح", "error")
         del user_steps[user_id]
         return
     target = user_steps[user_id]["target"]
-    await bot.reply_to(message, f"🚀 جاري ارسال {lines} سطر (3 ثواني بين كل سطر)")
+    await bot.send_sticker(message.chat.id, STICKERS["rocket"])
+    await bot.reply_to(message, f"{EMOJI['rocket']} جاري ارسال {lines} سطر (3 ثواني بين كل سطر)")
     asyncio.create_task(send_tasteer_messages(user_id, target, lines, message.chat.id))
     del user_steps[user_id]
 
@@ -613,24 +638,26 @@ async def stop(message):
     user_id = message.from_user.id
     if user_id in active_spams:
         active_spams[user_id]["stop"] = True
-        await bot.reply_to(message, "🛑 تم الايقاف")
+        await bot.send_sticker(message.chat.id, STICKERS["stop"])
+        await bot.reply_to(message, f"{EMOJI['stop']} تم الايقاف")
     else:
-        await bot.reply_to(message, "⚠️ لا توجد عملية")
+        await send_fancy_reply(message, f"{EMOJI['warning']} لا توجد عملية", "warning")
 
 flask_app = Flask(__name__)
 
 @flask_app.route('/')
 def home():
-    return "TNT SHADOW Bot is running!"
+    return "🔥 TNT SHADOW BOT - التشغيل ممتاز 🔥"
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
     flask_app.run(host='0.0.0.0', port=port)
 
 async def main():
-    print("🔥 TNT SHADOW BOT is running...")
-    print("✅ 3 ثواني بين كل رسالة")
-    print("✅ مشكلة قاعدة البيانات تم حلها")
+    print(f"{EMOJI['fire']}{EMOJI['crown']}{EMOJI['diamond']} TNT SHADOW BOT is running... {EMOJI['diamond']}{EMOJI['crown']}{EMOJI['fire']}")
+    print(f"{EMOJI['success']} 3 ثواني بين كل رسالة")
+    print(f"{EMOJI['success']} مشكلة قاعدة البيانات تم حلها")
+    print(f"{EMOJI['star']} تم إضافة ملصقات فخمة في كل مكان!")
     threading.Thread(target=run_flask, daemon=True).start()
     await bot.polling()
 
